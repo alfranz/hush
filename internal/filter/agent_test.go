@@ -18,8 +18,8 @@ ValueError: bad
 More output`
 
 	got := string(collapseTracebacks([]byte(input)))
-	if !strings.Contains(got, "Traceback ... (3 frames) → ValueError: bad") {
-		t.Errorf("expected collapsed traceback, got:\n%s", got)
+	if !strings.Contains(got, "Traceback ... (3 frames) test.py:2 → ValueError: bad") {
+		t.Errorf("expected collapsed traceback with location, got:\n%s", got)
 	}
 	if !strings.Contains(got, "Some output") {
 		t.Error("expected surrounding output to be preserved")
