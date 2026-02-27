@@ -13,12 +13,20 @@ import (
 
 var flags sharedFlags
 
+const logo = `
+  _               _
+ | |__  _   _ ___| |__
+ | '_ \| | | / __| '_ \
+ | | | | |_| \__ \ | | |
+ |_| |_|\__,_|___/_| |_|
+`
+
 func NewRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "hush [flags] <command>",
 		Short: "Context-efficient command runner",
-		Long:  "Wraps any shell command and prints a single ✓/✗ summary line.\nOn success, shows only the summary. On failure, shows filtered output.",
-		Args:  cobra.MinimumNArgs(1),
+		Long:  logo + "Run commands. Save tokens.\n✓ on success. Filtered output on failure. Built for agents.",
+		Args:  cobra.ArbitraryArgs,
 		RunE:  runRoot,
 		// Don't show errors twice
 		SilenceErrors: true,
@@ -44,6 +52,9 @@ func Execute() {
 }
 
 func runRoot(cmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		return cmd.Help()
+	}
 	command := args[0]
 
 	result, err := runner.Run(context.Background(), runner.Options{
