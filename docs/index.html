@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>hush — Context-efficient command runner for coding agents</title>
+<meta name="description" content="Wraps any shell command and prints a single ✓/✗ summary line. On success, shows only the summary. On failure, shows filtered output. Built for coding agents to reduce token waste.">
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-alt: #161b22;
+    --bg-code: #1c2129;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #d29922;
+    --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 4rem; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Nav */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg-alt);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  nav .logo {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--green);
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+  nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: color 0.15s;
+  }
+  nav a:hover { color: var(--text); }
+
+  /* Layout */
+  .container {
+    max-width: 52rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  section {
+    padding: 4rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  section:last-of-type { border-bottom: none; }
+
+  h2 {
+    font-family: var(--mono);
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+  }
+  h2 .hash {
+    color: var(--text-muted);
+    text-decoration: none;
+    margin-right: 0.25rem;
+  }
+  h2 .hash:hover { color: var(--accent); }
+
+  h3 {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    margin: 2rem 0 0.75rem;
+    color: var(--accent);
+  }
+
+  p { margin-bottom: 1rem; color: var(--text-muted); }
+  p strong { color: var(--text); }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    padding: 5rem 0 4rem;
+  }
+  .hero pre.ascii {
+    font-family: var(--mono);
+    font-size: clamp(0.65rem, 2.5vw, 1rem);
+    color: var(--green);
+    line-height: 1.3;
+    margin-bottom: 1.5rem;
+    display: inline-block;
+    text-align: left;
+  }
+  .hero .tagline {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+  .hero .sub {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    max-width: 36rem;
+    margin: 0 auto 2rem;
+  }
+
+  /* Install box */
+  .install-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem 1.25rem;
+    font-family: var(--mono);
+    font-size: 0.9rem;
+  }
+  .install-box .prompt { color: var(--green); user-select: none; }
+  .install-box code { color: var(--text); }
+
+  /* Code blocks */
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+  pre code { color: var(--text); }
+
+  /* Syntax colors */
+  .c  { color: var(--text-muted); }  /* comment */
+  .g  { color: var(--green); }       /* green/success */
+  .r  { color: var(--red); }         /* red/error */
+  .a  { color: var(--accent); }      /* accent/flag */
+  .y  { color: var(--yellow); }      /* yellow/keyword */
+  .s  { color: #a5d6ff; }            /* string */
+
+  /* Inline code */
+  code {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    background: var(--bg-code);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  td code { background: none; padding: 0; }
+
+  /* Comparison grid */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .compare > div { min-width: 0; }
+  .compare .label {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .compare pre { margin-bottom: 0; }
+
+  /* Savings table highlight */
+  .savings td:last-child {
+    color: var(--green);
+    font-weight: 600;
+    font-family: var(--mono);
+  }
+
+  /* Tip boxes */
+  .tip {
+    background: var(--bg-alt);
+    border-left: 3px solid var(--accent);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.9rem;
+  }
+  .tip p { margin: 0; }
+  .tip-label {
+    color: var(--accent);
+    font-weight: 600;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.25rem;
+  }
+
+  .tip.tip-warn {
+    border-left-color: var(--yellow);
+  }
+  .tip.tip-warn .tip-label {
+    color: var(--yellow);
+  }
+
+  /* Badge row */
+  .badges {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+  .badges a { line-height: 0; }
+
+  /* Footer */
+  footer {
+    padding: 2rem 0;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .compare { grid-template-columns: 1fr; }
+    nav { gap: 1rem; padding: 0.75rem 1rem; }
+    section { padding: 3rem 0; }
+    .hero { padding: 3rem 0 2rem; }
+  }
+
+  /* Workflow cards */
+  .workflow-card {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .workflow-card h4 {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    color: var(--green);
+    margin-bottom: 0.5rem;
+  }
+  .workflow-card p { margin-bottom: 0.5rem; font-size: 0.9rem; }
+  .workflow-card pre { margin-bottom: 0; }
+
+  /* Language tag */
+  .lang-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--bg);
+    background: var(--accent);
+    padding: 0.1em 0.5em;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+  }
+  .lang-tag.python { background: #3572A5; color: #fff; }
+  .lang-tag.js { background: #f1e05a; color: #000; }
+  .lang-tag.go { background: #00ADD8; color: #fff; }
+  .lang-tag.rust { background: #dea584; color: #000; }
+  .lang-tag.general { background: var(--text-muted); color: var(--bg); }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <a href="#" class="logo">hush</a>
+  <a href="#why">Why hush?</a>
+  <a href="#usage">Usage</a>
+  <a href="#batch">Batch</a>
+  <a href="#config">Config</a>
+  <a href="#best-practices">Best Practices</a>
+  <a href="#workflows">Workflows</a>
+  <a href="#flags">Flags</a>
+  <a href="#install">Install</a>
+  <a href="https://github.com/alfranz/hush">GitHub</a>
+</nav>
+
+<div class="container">
+
+<!-- Hero -->
+<section class="hero" id="top">
+<pre class="ascii">
+  _               _
+ | |__  _   _ ___| |__
+ | '_ \| | | / __| '_ \
+ | | | | |_| \__ \ | | |
+ |_| |_|\__,_|___/_| |_|</pre>
+
+  <p class="tagline"><strong>Context-efficient command runner for coding agents.</strong></p>
+  <p class="sub">Wraps any shell command and prints a single ✓/✗ summary line. On success, shows only the summary. On failure, shows filtered output. Preserves exit codes.</p>
+
+  <div class="badges">
+    <a href="https://github.com/alfranz/hush/actions/workflows/ci.yml"><img src="https://github.com/alfranz/hush/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+    <a href="https://goreportcard.com/report/github.com/alfranz/hush"><img src="https://goreportcard.com/badge/github.com/alfranz/hush" alt="Go Report Card"></a>
+    <a href="https://pkg.go.dev/github.com/alfranz/hush"><img src="https://pkg.go.dev/badge/github.com/alfranz/hush" alt="GoDoc"></a>
+  </div>
+
+  <div class="install-box">
+    <span class="prompt">$</span>
+    <code>go install github.com/alfranz/hush/cmd/hush@latest</code>
+  </div>
+</section>
+
+<!-- Why hush? -->
+<section id="why">
+  <h2><a class="hash" href="#why">#</a> Why hush?</h2>
+  <p>Coding agents burn <strong>thousands of context tokens</strong> on verbose test output — even when all tests pass. hush reduces that to a single line.</p>
+
+  <div class="compare">
+    <div>
+      <div class="label">Without hush (~1,028 tokens)</div>
+      <pre><code><span class="c">===== test session starts =====</span>
+<span class="c">platform linux -- Python 3.12</span>
+<span class="c">...</span>
+<span class="c">tests/test_auth.py::test_login PASSED  [ 2%]</span>
+<span class="c">tests/test_auth.py::test_logout PASSED [ 4%]</span>
+<span class="c">  ... (47 more lines)</span>
+<span class="c">====== 47 passed in 3.42s ======</span></code></pre>
+    </div>
+    <div>
+      <div class="label">With hush (~4 tokens)</div>
+      <pre><code><span class="g">✓</span> pytest (3.4s)</code></pre>
+    </div>
+  </div>
+
+  <table class="savings">
+    <thead>
+      <tr><th>Test Runner</th><th>Raw Output</th><th>With hush</th><th>Saved</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>pytest (47 tests)</td><td>~1,028 tokens</td><td>~4 tokens</td><td>99%</td></tr>
+      <tr><td>Jest (89 tests)</td><td>~886 tokens</td><td>~5 tokens</td><td>99%</td></tr>
+      <tr><td>go test (14 pkgs)</td><td>~196 tokens</td><td>~6 tokens</td><td>96%</td></tr>
+      <tr><td>cargo test (51 tests)</td><td>~683 tokens</td><td>~5 tokens</td><td>99%</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- Usage -->
+<section id="usage">
+  <h2><a class="hash" href="#usage">#</a> Usage</h2>
+
+  <h3>Basic</h3>
+  <pre><code><span class="c"># Wrap any command</span>
+hush <span class="s">"pytest -x"</span>
+<span class="g">✓</span> pytest (1.8s)
+
+<span class="c"># On failure, shows filtered output</span>
+hush <span class="s">"pytest -x"</span>
+<span class="r">✗</span> pytest (0.4s)
+  FAILED tests/test_auth.py::test_login - assert 200 == 401</code></pre>
+
+  <h3>Custom labels</h3>
+  <p>By default, hush derives the label from the command name. Use <code>--label</code> to override it — especially useful when running the same tool multiple times.</p>
+  <pre><code><span class="c"># Default: label is derived from command ("pytest")</span>
+hush <span class="s">"pytest tests/unit"</span>
+<span class="g">✓</span> pytest (1.2s)
+
+hush <span class="s">"pytest tests/integration"</span>
+<span class="r">✗</span> pytest (0.4s)         <span class="c"># which suite failed?</span>
+
+<span class="c"># With --label: easy to tell apart</span>
+hush <span class="a">--label</span> <span class="s">"unit"</span> <span class="s">"pytest tests/unit"</span>
+<span class="g">✓</span> unit (1.2s)
+
+hush <span class="a">--label</span> <span class="s">"integration"</span> <span class="s">"pytest tests/integration"</span>
+<span class="r">✗</span> integration (0.4s)    <span class="c"># clear</span></code></pre>
+
+  <h3>Filtering output</h3>
+  <pre><code><span class="c"># Last 30 lines of output</span>
+hush <span class="a">--tail</span> 30 <span class="s">"npm test"</span>
+
+<span class="c"># Lines matching a pattern</span>
+hush <span class="a">--grep</span> <span class="s">"error|FAIL"</span> <span class="s">"make"</span>
+
+<span class="c"># First 20 lines</span>
+hush <span class="a">--head</span> 20 <span class="s">"cargo build"</span></code></pre>
+
+</section>
+
+<!-- Batch Mode -->
+<section id="batch">
+  <h2><a class="hash" href="#batch">#</a> Batch Mode</h2>
+  <p>Run multiple commands in sequence with a combined summary.</p>
+  <pre><code>hush batch <span class="s">"ruff check ."</span> <span class="s">"mypy src/"</span> <span class="s">"pytest -x"</span>
+<span class="g">✓</span> ruff (0.3s)
+<span class="g">✓</span> mypy (2.1s)
+<span class="g">✓</span> pytest (1.8s)
+<span class="g">✓</span> 3/3 checks passed (4.2s)</code></pre>
+
+  <p>Use <code>--continue</code> to run all commands even if one fails:</p>
+  <pre><code>hush batch <span class="a">--continue</span> <span class="s">"ruff check ."</span> <span class="s">"false"</span> <span class="s">"pytest -x"</span>
+<span class="g">✓</span> ruff (0.3s)
+<span class="r">✗</span> false (0.0s)
+<span class="g">✓</span> pytest (1.8s)
+<span class="r">✗</span> 2/3 checks passed (2.1s)</code></pre>
+</section>
+
+<!-- Config File -->
+<section id="config">
+  <h2><a class="hash" href="#config">#</a> Config File</h2>
+  <p>Define named checks in <code>.hush.yaml</code> at your project root:</p>
+  <pre><code><span class="c"># .hush.yaml</span>
+<span class="y">checks</span>:
+  <span class="y">lint</span>:
+    <span class="y">cmd</span>: ruff check .
+  <span class="y">types</span>:
+    <span class="y">cmd</span>: mypy src/
+    <span class="y">grep</span>: <span class="s">"error:"</span>
+  <span class="y">test</span>:
+    <span class="y">cmd</span>: pytest -x
+    <span class="y">tail</span>: 40</code></pre>
+
+  <p>Then run by name:</p>
+  <pre><code>hush lint   <span class="c"># run a single check</span>
+<span class="g">✓</span> ruff (0.3s)
+
+hush all    <span class="c"># run all checks in order</span>
+<span class="g">✓</span> ruff (0.3s)
+<span class="g">✓</span> mypy (2.1s)
+<span class="g">✓</span> pytest (1.8s)
+<span class="g">✓</span> 3/3 checks passed (4.2s)</code></pre>
+</section>
+
+<!-- Best Practices -->
+<section id="best-practices">
+  <h2><a class="hash" href="#best-practices">#</a> Best Practices</h2>
+
+  <h3><span class="lang-tag general">General</span> Combine filters for maximum context savings</h3>
+  <p>Filters stack: use <code>--grep</code> to find error lines, then <code>--tail</code> to limit how many are shown. This is especially useful for builds that emit hundreds of warnings.</p>
+  <pre><code>hush <span class="a">--grep</span> <span class="s">"error"</span> <span class="a">--tail</span> 10 <span class="s">"make build"</span></code></pre>
+
+  <h3><span class="lang-tag general">General</span> Use labels when running the same tool multiple times</h3>
+  <p>When your agent runs the same test suite against different targets, labels make the output scannable.</p>
+  <pre><code>hush <span class="a">--label</span> <span class="s">"unit"</span> <span class="s">"pytest tests/unit"</span>
+hush <span class="a">--label</span> <span class="s">"integration"</span> <span class="s">"pytest tests/integration"</span></code></pre>
+
+  <h3><span class="lang-tag python">Python</span> Use <code>-x</code> with pytest</h3>
+  <p>Stop on first failure. There's no point burning tokens on 50 cascading failures when the first one is the root cause.</p>
+  <pre><code>hush <span class="s">"pytest -x --tb=short"</span></code></pre>
+
+  <div class="tip">
+    <div class="tip-label">Tip</div>
+    <p><code>--tb=short</code> gives pytest shorter tracebacks, and hush's agent mode compresses them further.</p>
+  </div>
+
+  <h3><span class="lang-tag python">Python</span> Grep for ruff / mypy errors</h3>
+  <p>Linters can produce huge output. Filter to just the actionable lines.</p>
+  <pre><code><span class="c"># Only show lines with "error" for mypy</span>
+hush <span class="a">--grep</span> <span class="s">"error:"</span> <span class="s">"mypy src/"</span>
+
+<span class="c"># Ruff is usually concise, but cap it anyway</span>
+hush <span class="a">--tail</span> 20 <span class="s">"ruff check ."</span></code></pre>
+
+  <h3><span class="lang-tag js">JavaScript</span> Tame Jest and Vitest output</h3>
+  <p>Jest and Vitest are notoriously verbose. Use <code>--tail</code> to catch the summary and last failure, or <code>--grep</code> to pull specific failures.</p>
+  <pre><code><span class="c"># Grab the summary and last failure</span>
+hush <span class="a">--tail</span> 30 <span class="s">"npx jest --no-coverage"</span>
+
+<span class="c"># ESLint: just errors</span>
+hush <span class="a">--grep</span> <span class="s">"error"</span> <span class="s">"npx eslint src/"</span></code></pre>
+
+  <div class="tip">
+    <div class="tip-label">Tip</div>
+    <p>Pass <code>--no-coverage</code> to Jest when running via hush. Coverage tables add hundreds of tokens with zero debugging value.</p>
+  </div>
+
+  <h3><span class="lang-tag js">JavaScript</span> TypeScript type-checking</h3>
+  <pre><code>hush <span class="a">--grep</span> <span class="s">"error TS"</span> <span class="s">"npx tsc --noEmit"</span></code></pre>
+
+  <h3><span class="lang-tag go">Go</span> Use <code>go test</code> with targeted packages</h3>
+  <p>Go test output is already fairly lean, but hush still saves tokens on pass. Target specific packages when possible.</p>
+  <pre><code>hush <span class="s">"go test ./internal/runner/..."</span>
+hush <span class="s">"go test -race ./..."</span></code></pre>
+
+  <h3><span class="lang-tag go">Go</span> Go vet and staticcheck</h3>
+  <pre><code>hush <span class="s">"go vet ./..."</span>
+hush <span class="a">--grep</span> <span class="s">"error"</span> <span class="s">"staticcheck ./..."</span></code></pre>
+
+  <h3><span class="lang-tag rust">Rust</span> Tame cargo output</h3>
+  <p>Cargo is extremely verbose during compilation. Use <code>--head</code> or <code>--grep</code> to surface just the errors.</p>
+  <pre><code><span class="c"># First 20 lines catches the first compiler error</span>
+hush <span class="a">--head</span> 20 <span class="s">"cargo build 2&gt;&amp;1"</span>
+
+<span class="c"># Just errors from cargo test</span>
+hush <span class="a">--grep</span> <span class="s">"FAILED|error\\["</span> <span class="s">"cargo test"</span></code></pre>
+
+  <h3><span class="lang-tag rust">Rust</span> Clippy lints</h3>
+  <pre><code>hush <span class="a">--grep</span> <span class="s">"warning:|error:"</span> <span class="s">"cargo clippy -- -W clippy::all"</span></code></pre>
+</section>
+
+<!-- Workflows -->
+<section id="workflows">
+  <h2><a class="hash" href="#workflows">#</a> Recommended Workflows</h2>
+  <p>These patterns work well with coding agents (Claude Code, Cursor, Aider, etc.).</p>
+
+  <div class="workflow-card">
+    <h4>1. Define project checks in .hush.yaml</h4>
+    <p>Define your project's checks once, then the agent can run them all with a single command. This is not a git hook — the agent runs it explicitly.</p>
+    <pre><code><span class="c"># .hush.yaml</span>
+<span class="y">checks</span>:
+  <span class="y">lint</span>:
+    <span class="y">cmd</span>: ruff check .
+  <span class="y">types</span>:
+    <span class="y">cmd</span>: mypy src/
+    <span class="y">grep</span>: <span class="s">"error:"</span>
+  <span class="y">test</span>:
+    <span class="y">cmd</span>: pytest -x --tb=short
+    <span class="y">tail</span>: 40
+
+<span class="c"># Agent runs:</span>
+hush all</code></pre>
+  </div>
+
+  <div class="workflow-card">
+    <h4>2. Full pipeline check before commit</h4>
+    <p>Run lint, type-check, and tests in one batch. The agent sees a clean summary or exactly which step failed.</p>
+    <pre><code>hush batch <span class="a">--continue</span> \
+  <span class="s">"ruff check ."</span> \
+  <span class="s">"mypy src/"</span> \
+  <span class="s">"pytest -x --tb=short"</span>
+<span class="g">✓</span> ruff (0.3s)
+<span class="g">✓</span> mypy (2.1s)
+<span class="g">✓</span> pytest (1.8s)
+<span class="g">✓</span> 3/3 checks passed (4.2s)</code></pre>
+  </div>
+
+  <div class="workflow-card">
+    <h4>3. Build verification</h4>
+    <p>Catch build errors early. Use <code>--head</code> to show the first error without the full cascade.</p>
+    <pre><code>hush <span class="a">--head</span> 15 <span class="s">"cargo build 2&gt;&amp;1"</span>
+hush <span class="a">--head</span> 15 <span class="s">"go build ./..."</span>
+hush <span class="a">--head</span> 15 <span class="s">"npm run build"</span></code></pre>
+  </div>
+
+  <div class="workflow-card">
+    <h4>4. Targeted test runs after edits</h4>
+    <p>When the agent edits a specific file, run only the related tests. Faster feedback, fewer tokens.</p>
+    <pre><code><span class="c"># Python: run the test file that matches</span>
+hush <span class="s">"pytest tests/test_auth.py -x"</span>
+
+<span class="c"># Go: run the specific package</span>
+hush <span class="s">"go test ./internal/runner/"</span>
+
+<span class="c"># JS: use Jest's path filter</span>
+hush <span class="s">"npx jest auth.test.ts"</span></code></pre>
+  </div>
+
+  <div class="workflow-card">
+    <h4>5. Agent instructions integration</h4>
+    <p>Add hush to your agent's system instructions (CLAUDE.md, .cursor/rules, AGENTS.md, etc.) so it uses hush by default.</p>
+    <pre><code><span class="c"># In CLAUDE.md, .cursor/rules, or AGENTS.md:</span>
+Always use hush to run tests and linters:
+  hush "pytest -x --tb=short"
+  hush --grep "error" "mypy src/"
+  hush all   <span class="c"># if .hush.yaml is present</span></code></pre>
+  </div>
+
+  <div class="tip tip-warn">
+    <div class="tip-label">Avoid</div>
+    <p>Don't use hush for commands where you <em>need</em> the full output (e.g., <code>hush "cat file.txt"</code> or <code>hush "git diff"</code>). hush is for commands where success = silence.</p>
+  </div>
+</section>
+
+<!-- Flags -->
+<section id="flags">
+  <h2><a class="hash" href="#flags">#</a> Flags Reference</h2>
+  <table>
+    <thead>
+      <tr><th>Flag</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>--label</code></td><td>Custom label for the summary line</td></tr>
+      <tr><td><code>--tail N</code></td><td>Show only last N lines on failure</td></tr>
+      <tr><td><code>--head N</code></td><td>Show only first N lines on failure</td></tr>
+      <tr><td><code>--grep PATTERN</code></td><td>Filter output to lines matching pattern</td></tr>
+
+      <tr><td><code>--no-time</code></td><td>Suppress duration from summary</td></tr>
+      <tr><td><code>--color</code></td><td>Force colored output</td></tr>
+      <tr><td><code>--no-color</code></td><td>Disable colored output</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- Install -->
+<section id="install">
+  <h2><a class="hash" href="#install">#</a> Install</h2>
+  <pre><code>go install github.com/alfranz/hush/cmd/hush@latest</code></pre>
+  <p>This places the binary in <code>$GOPATH/bin</code> (usually <code>~/go/bin</code>). Make sure it's in your <code>$PATH</code>:</p>
+  <pre><code><span class="c"># Check if it's already there</span>
+which hush
+
+<span class="c"># If not, add to your shell profile (~/.zshrc, ~/.bashrc, etc.)</span>
+export PATH="$HOME/go/bin:$PATH"</code></pre>
+</section>
+
+</div>
+
+<!-- Footer -->
+<footer>
+  <p><a href="https://github.com/alfranz/hush">GitHub</a> &middot; MIT License</p>
+</footer>
+
+</body>
+</html>
