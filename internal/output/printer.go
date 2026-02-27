@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"golang.org/x/term"
@@ -112,16 +113,6 @@ func formatDuration(d time.Duration) string {
 func indentOutput(b []byte) string {
 	s := string(b)
 	// Trim trailing newline to avoid extra blank line
-	if len(s) > 0 && s[len(s)-1] == '\n' {
-		s = s[:len(s)-1]
-	}
-	// Replace newlines with newline + indent
-	result := ""
-	for i, c := range s {
-		result += string(c)
-		if c == '\n' && i < len(s)-1 {
-			result += "  "
-		}
-	}
-	return result
+	s = strings.TrimSuffix(s, "\n")
+	return strings.ReplaceAll(s, "\n", "\n  ")
 }

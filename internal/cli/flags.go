@@ -26,12 +26,14 @@ func addSharedFlags(cmd *cobra.Command, f *sharedFlags) {
 
 func (f *sharedFlags) colorOpt() *bool {
 	if f.color {
-		t := true
-		return &t
+		return ptrTo(true)
 	}
 	if f.noColor {
-		t := false
-		return &t
+		return ptrTo(false)
 	}
 	return nil
+}
+
+func ptrTo[T any](v T) *T {
+	return &v
 }

@@ -6,7 +6,7 @@ build:
 	go build -o $(BIN) ./cmd/hush
 
 test:
-	go test -race ./...
+	hush "go test -race ./..."
 
 lint:
 	golangci-lint run ./...

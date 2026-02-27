@@ -25,8 +25,6 @@ func registerNamedChecks(root *cobra.Command) {
 
 	// Register individual check commands
 	for name, check := range cfg.Checks {
-		check := check // capture
-		name := name
 		cmd := &cobra.Command{
 			Use:           name,
 			Short:         "Run " + name + " check from .hush.yaml",
@@ -58,15 +56,9 @@ func registerNamedChecks(root *cobra.Command) {
 }
 
 func runNamedCheck(check config.Check) error {
-	label := check.Label
-	if label == "" {
-		// Will be derived from command by runner
-		label = ""
-	}
-
 	result, err := runner.Run(context.Background(), runner.Options{
 		Command: check.Cmd,
-		Label:   label,
+		Label:   check.Label,
 	})
 	if err != nil {
 		return err

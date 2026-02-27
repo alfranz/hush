@@ -7,11 +7,11 @@ import (
 	"time"
 )
 
-func boolPtr(b bool) *bool { return &b }
+func ptrTo[T any](v T) *T { return &v }
 
 func TestPrintResultSuccess(t *testing.T) {
 	var buf bytes.Buffer
-	PrintResult(&buf, "echo", 0, 100*time.Millisecond, nil, Options{Color: boolPtr(false)})
+	PrintResult(&buf, "echo", 0, 100*time.Millisecond, nil, Options{Color: ptrTo(false)})
 	got := buf.String()
 	if !strings.Contains(got, "✓ echo") {
 		t.Errorf("expected success marker, got: %q", got)
@@ -23,7 +23,7 @@ func TestPrintResultSuccess(t *testing.T) {
 
 func TestPrintResultFailure(t *testing.T) {
 	var buf bytes.Buffer
-	PrintResult(&buf, "test", 1, 500*time.Millisecond, []byte("FAIL: something broke\n"), Options{Color: boolPtr(false)})
+	PrintResult(&buf, "test", 1, 500*time.Millisecond, []byte("FAIL: something broke\n"), Options{Color: ptrTo(false)})
 	got := buf.String()
 	if !strings.Contains(got, "✗ test") {
 		t.Errorf("expected failure marker, got: %q", got)
@@ -35,7 +35,7 @@ func TestPrintResultFailure(t *testing.T) {
 
 func TestPrintResultNoTime(t *testing.T) {
 	var buf bytes.Buffer
-	PrintResult(&buf, "echo", 0, 100*time.Millisecond, nil, Options{NoTime: true, Color: boolPtr(false)})
+	PrintResult(&buf, "echo", 0, 100*time.Millisecond, nil, Options{NoTime: true, Color: ptrTo(false)})
 	got := buf.String()
 	if strings.Contains(got, "(") {
 		t.Errorf("expected no duration, got: %q", got)
@@ -44,7 +44,7 @@ func TestPrintResultNoTime(t *testing.T) {
 
 func TestPrintBatchSummaryAllPass(t *testing.T) {
 	var buf bytes.Buffer
-	PrintBatchSummary(&buf, 3, 3, time.Second, false, boolPtr(false))
+	PrintBatchSummary(&buf, 3, 3, time.Second, false, ptrTo(false))
 	got := buf.String()
 	if !strings.Contains(got, "✓ 3/3 checks passed") {
 		t.Errorf("expected all pass summary, got: %q", got)
@@ -53,7 +53,7 @@ func TestPrintBatchSummaryAllPass(t *testing.T) {
 
 func TestPrintBatchSummaryWithFailure(t *testing.T) {
 	var buf bytes.Buffer
-	PrintBatchSummary(&buf, 1, 3, time.Second, false, boolPtr(false))
+	PrintBatchSummary(&buf, 1, 3, time.Second, false, ptrTo(false))
 	got := buf.String()
 	if !strings.Contains(got, "✗ 1/3 checks passed") {
 		t.Errorf("expected failure summary, got: %q", got)
