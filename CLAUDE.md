@@ -8,9 +8,8 @@
 
 ```bash
 make build          # Build to bin/hush
-make test           # Run tests with race detector
+make test           # Run tests with race detector (via hush)
 make install        # go install
-go test -race ./... # Run all tests
 ```
 
 ## Project Structure
