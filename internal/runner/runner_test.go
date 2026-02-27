@@ -1,12 +1,11 @@
 package runner
 
 import (
-	"context"
 	"testing"
 )
 
 func TestRunSuccess(t *testing.T) {
-	r, err := Run(context.Background(), Options{Command: "echo hello"})
+	r, err := Run(t.Context(), Options{Command: "echo hello"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -19,7 +18,7 @@ func TestRunSuccess(t *testing.T) {
 }
 
 func TestRunFailure(t *testing.T) {
-	r, err := Run(context.Background(), Options{Command: "false"})
+	r, err := Run(t.Context(), Options{Command: "false"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -29,7 +28,7 @@ func TestRunFailure(t *testing.T) {
 }
 
 func TestRunExitCode(t *testing.T) {
-	r, err := Run(context.Background(), Options{Command: "exit 42"})
+	r, err := Run(t.Context(), Options{Command: "exit 42"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -39,7 +38,7 @@ func TestRunExitCode(t *testing.T) {
 }
 
 func TestRunLabel(t *testing.T) {
-	r, err := Run(context.Background(), Options{Command: "echo hello"})
+	r, err := Run(t.Context(), Options{Command: "echo hello"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -49,7 +48,7 @@ func TestRunLabel(t *testing.T) {
 }
 
 func TestRunCustomLabel(t *testing.T) {
-	r, err := Run(context.Background(), Options{Command: "echo hello", Label: "my test"})
+	r, err := Run(t.Context(), Options{Command: "echo hello", Label: "my test"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

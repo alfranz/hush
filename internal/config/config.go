@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -40,7 +41,8 @@ func Load() (*Config, error) {
 	}
 
 	if err := v.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+		var notFound viper.ConfigFileNotFoundError
+		if errors.As(err, &notFound) {
 			return nil, nil // No config file is fine
 		}
 		return nil, err
