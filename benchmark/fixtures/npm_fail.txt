@@ -1,0 +1,82 @@
+
+> myapp@2.1.0 test
+> jest --coverage
+
+ PASS  src/components/__tests__/Button.test.tsx
+ PASS  src/components/__tests__/Modal.test.tsx
+ PASS  src/components/__tests__/Navbar.test.tsx
+ PASS  src/components/__tests__/Form.test.tsx
+ PASS  src/components/__tests__/Card.test.tsx
+ PASS  src/hooks/__tests__/useAuth.test.ts
+ PASS  src/hooks/__tests__/useFetch.test.ts
+ PASS  src/hooks/__tests__/useForm.test.ts
+ PASS  src/hooks/__tests__/useDebounce.test.ts
+ PASS  src/utils/__tests__/validators.test.ts
+ PASS  src/utils/__tests__/formatters.test.ts
+ PASS  src/utils/__tests__/helpers.test.ts
+ FAIL  src/api/__tests__/client.test.ts
+  ● API Client › should retry on 500 errors
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 3
+    Received: 1
+
+      24 |     const result = await client.get('/items');
+      25 |     expect(result.status).toBe(200);
+    > 26 |     expect(fetchMock).toHaveBeenCalledTimes(3);
+         |                       ^
+      27 |   });
+      28 |
+
+      at Object.<anonymous> (src/api/__tests__/client.test.ts:26:23)
+
+ PASS  src/api/__tests__/auth.test.ts
+ PASS  src/api/__tests__/items.test.ts
+ PASS  src/store/__tests__/authSlice.test.ts
+ PASS  src/store/__tests__/itemsSlice.test.ts
+ PASS  src/store/__tests__/uiSlice.test.ts
+ PASS  src/pages/__tests__/Login.test.tsx
+ PASS  src/pages/__tests__/Dashboard.test.tsx
+ PASS  src/pages/__tests__/Settings.test.tsx
+ PASS  src/pages/__tests__/ItemDetail.test.tsx
+
+-----------------------|---------|----------|---------|---------|-------------------
+File                   | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+-----------------------|---------|----------|---------|---------|-------------------
+All files              |   87.34 |    81.22 |   91.03 |   86.98 |
+ src/components        |   92.11 |    85.71 |   95.00 |   91.89 |
+  Button.tsx           |     100 |      100 |     100 |     100 |
+  Modal.tsx            |   88.24 |    83.33 |   90.00 |   87.50 | 45-52
+  Navbar.tsx           |   91.67 |    80.00 |  100.00 |   91.30 | 28-30
+  Form.tsx             |   89.47 |    77.78 |   85.71 |   88.89 | 67-72,98
+  Card.tsx             |   95.00 |    90.00 |  100.00 |   94.74 | 33
+ src/hooks             |   85.00 |    78.57 |   88.89 |   84.21 |
+  useAuth.ts           |   90.91 |    83.33 |  100.00 |   90.00 | 34
+  useFetch.ts          |   82.35 |    75.00 |   80.00 |   81.25 | 28-35,52
+  useForm.ts           |   84.62 |    77.78 |   85.71 |   83.33 | 41-48
+  useDebounce.ts       |   80.00 |    66.67 |  100.00 |   78.57 | 15-18
+ src/utils             |   95.65 |    91.67 |  100.00 |   95.45 |
+  validators.ts        |   93.33 |    87.50 |  100.00 |   92.86 | 22
+  formatters.ts        |  100.00 |  100.00 |  100.00 |  100.00 |
+  helpers.ts           |   93.75 |    88.89 |  100.00 |   93.33 | 45
+ src/api               |   82.14 |    73.33 |   84.62 |   81.48 |
+  client.ts            |   78.95 |    66.67 |   80.00 |   77.78 | 34-42,58-61
+  auth.ts              |   85.71 |    80.00 |   87.50 |   85.19 | 29-32
+  items.ts             |   82.35 |    75.00 |   85.71 |   81.82 | 44-51
+ src/store             |   88.46 |    83.33 |   90.91 |   88.00 |
+  authSlice.ts         |   91.67 |    87.50 |  100.00 |   91.30 | 38-39
+  itemsSlice.ts        |   85.71 |    80.00 |   83.33 |   85.00 | 52-58
+  uiSlice.ts           |   88.89 |    83.33 |   90.00 |   88.24 | 25-26
+ src/pages             |   80.00 |    72.73 |   83.33 |   79.17 |
+  Login.tsx            |   85.71 |    80.00 |   87.50 |   85.00 | 42-45
+  Dashboard.tsx        |   76.47 |    66.67 |   80.00 |   75.00 | 58-67,82-85
+  Settings.tsx         |   81.25 |    75.00 |   85.71 |   80.77 | 49-54
+  ItemDetail.tsx       |   77.78 |    70.00 |   80.00 |   76.92 | 38-45,61-64
+-----------------------|---------|----------|---------|---------|-------------------
+
+Test Suites: 1 failed, 21 passed, 22 total
+Tests:       1 failed, 88 passed, 89 total
+Snapshots:   12 passed, 12 total
+Time:        8.432 s
+Ran all test suites.

@@ -1,0 +1,70 @@
+   Compiling mylib v0.3.1 (/home/user/mylib)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.23s
+     Running unittests src/lib.rs (target/debug/deps/mylib-a1b2c3d4e5f6)
+
+running 38 tests
+test auth::tests::test_hash_password ... ok
+test auth::tests::test_verify_password ... ok
+test auth::tests::test_generate_jwt ... ok
+test auth::tests::test_validate_jwt ... ok
+test auth::tests::test_expired_jwt ... ok
+test auth::tests::test_refresh_token ... ok
+test db::tests::test_connection ... ok
+test db::tests::test_migration ... ok
+test db::tests::test_query_builder ... ok
+test db::tests::test_transaction ... ok
+test db::tests::test_pool_config ... ok
+test models::tests::test_user_new ... ok
+test models::tests::test_user_validate ... ok
+test models::tests::test_item_new ... ok
+test models::tests::test_item_serialize ... ok
+test models::tests::test_item_deserialize ... ok
+test handlers::tests::test_health_check ... ok
+test handlers::tests::test_list_items ... ok
+test handlers::tests::test_get_item ... ok
+test handlers::tests::test_create_item ... ok
+test handlers::tests::test_update_item ... ok
+test handlers::tests::test_delete_item ... ok
+test handlers::tests::test_not_found ... ok
+test middleware::tests::test_auth_middleware ... ok
+test middleware::tests::test_cors ... ok
+test middleware::tests::test_rate_limit ... ok
+test middleware::tests::test_logging ... ok
+test cache::tests::test_get_set ... ok
+test cache::tests::test_expiry ... ok
+test cache::tests::test_eviction ... ok
+test queue::tests::test_enqueue ... ok
+test queue::tests::test_dequeue ... ok
+test queue::tests::test_retry ... ok
+test queue::tests::test_dead_letter ... ok
+test config::tests::test_default ... ok
+test config::tests::test_from_env ... ok
+test config::tests::test_from_file ... ok
+test config::tests::test_merge ... ok
+
+test result: ok. 38 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.18s
+
+     Running tests/integration.rs (target/debug/deps/integration-f6e5d4c3b2a1)
+
+running 8 tests
+test test_full_crud_flow ... ok
+test test_auth_flow ... ok
+test test_concurrent_requests ... ok
+test test_error_handling ... ok
+test test_pagination ... ok
+test test_search ... ok
+test test_file_upload ... ok
+test test_websocket ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.45s
+
+   Doc-tests mylib
+
+running 5 tests
+test src/lib.rs - MyLib::new (line 12) ... ok
+test src/lib.rs - MyLib::connect (line 28) ... ok
+test src/models.rs - User::new (line 15) ... ok
+test src/models.rs - Item::new (line 22) ... ok
+test src/config.rs - Config::from_env (line 8) ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.02s

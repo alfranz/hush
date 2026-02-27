@@ -1,0 +1,15 @@
+ok  	github.com/example/myservice/internal/auth	0.234s
+ok  	github.com/example/myservice/internal/api	0.891s
+ok  	github.com/example/myservice/internal/db	1.203s
+ok  	github.com/example/myservice/internal/models	0.156s
+ok  	github.com/example/myservice/internal/middleware	0.312s
+ok  	github.com/example/myservice/internal/handlers	0.567s
+ok  	github.com/example/myservice/internal/services	0.445s
+ok  	github.com/example/myservice/internal/cache	0.189s
+ok  	github.com/example/myservice/internal/queue	0.334s
+ok  	github.com/example/myservice/internal/config	0.078s
+ok  	github.com/example/myservice/pkg/validator	0.123s
+ok  	github.com/example/myservice/pkg/logger	0.067s
+ok  	github.com/example/myservice/pkg/crypto	0.445s
+ok  	github.com/example/myservice/pkg/httputil	0.198s
+PASS
