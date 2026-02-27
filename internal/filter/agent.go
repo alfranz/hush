@@ -22,6 +22,10 @@ func ApplyAgentMode(b []byte) []byte {
 	return b
 }
 
+// frameLocationRegex extracts file path and line number from a Python traceback frame.
+// Matches: File "src/tokens.py", line 18, in generate_token
+var frameLocationRegex = regexp.MustCompile(`File "([^"]+)", line (\d+)`)
+
 func collapseTracebacks(b []byte) []byte {
 	lines := bytes.Split(b, []byte("\n"))
 	var result [][]byte
@@ -29,13 +33,17 @@ func collapseTracebacks(b []byte) []byte {
 	for i < len(lines) {
 		line := string(lines[i])
 		if strings.TrimSpace(line) == "Traceback (most recent call last):" {
-			// Count frames and find the exception line
+			// Count frames, track last frame location, and find the exception line
 			frameCount := 0
+			lastLocation := ""
 			j := i + 1
 			for j < len(lines) {
 				trimmed := strings.TrimSpace(string(lines[j]))
 				if strings.HasPrefix(trimmed, "File ") {
 					frameCount++
+					if m := frameLocationRegex.FindStringSubmatch(trimmed); m != nil {
+						lastLocation = m[1] + ":" + m[2]
+					}
 					j++ // skip the code line
 				} else if trimmed == "" || strings.HasPrefix(trimmed, "File ") {
 					// continue
@@ -46,7 +54,12 @@ func collapseTracebacks(b []byte) []byte {
 			}
 			if j < len(lines) {
 				exceptionLine := strings.TrimSpace(string(lines[j]))
-				summary := fmt.Sprintf("Traceback ... (%d frames) → %s", frameCount, exceptionLine)
+				var summary string
+				if lastLocation != "" {
+					summary = fmt.Sprintf("Traceback ... (%d frames) %s → %s", frameCount, lastLocation, exceptionLine)
+				} else {
+					summary = fmt.Sprintf("Traceback ... (%d frames) → %s", frameCount, exceptionLine)
+				}
 				result = append(result, []byte(summary))
 				i = j + 1
 			} else {
