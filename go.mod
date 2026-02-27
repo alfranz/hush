@@ -1,4 +1,4 @@
-module github.com/alexfranz/hush-cli
+module github.com/alfranz/hush
 
 go 1.24.5
 

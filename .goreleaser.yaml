@@ -17,13 +17,6 @@ archives:
       - goos: windows
         format: zip
 
-brews:
-  - repository:
-      owner: alexfranz
-      name: homebrew-tap
-    homepage: https://github.com/alexfranz/hush-cli
-    description: Context-efficient command runner for coding agents
-
 checksum:
   name_template: checksums.txt
 

@@ -7,13 +7,17 @@ Wraps any shell command and prints a single `✓`/`✗` summary line. On success
 ## Install
 
 ```bash
-go install github.com/alexfranz/hush-cli/cmd/hush@latest
+go install github.com/alfranz/hush/cmd/hush@latest
 ```
 
-Or with Homebrew (after release):
+This places the `hush` binary in your `$GOPATH/bin` (usually `~/go/bin`). Make sure that directory is in your `$PATH`:
 
 ```bash
-brew install alexfranz/tap/hush
+# Check if it's already there
+which hush
+
+# If not, add to your shell profile (~/.zshrc, ~/.bashrc, etc.)
+export PATH="$HOME/go/bin:$PATH"
 ```
 
 ## Usage

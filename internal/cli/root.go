@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/alexfranz/hush-cli/internal/filter"
-	"github.com/alexfranz/hush-cli/internal/output"
-	"github.com/alexfranz/hush-cli/internal/runner"
+	"github.com/alfranz/hush/internal/filter"
+	"github.com/alfranz/hush/internal/output"
+	"github.com/alfranz/hush/internal/runner"
 	"github.com/spf13/cobra"
 )
 
