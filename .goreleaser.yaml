@@ -1,0 +1,35 @@
+version: 2
+
+builds:
+  - main: ./cmd/hush
+    binary: hush
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+
+brews:
+  - repository:
+      owner: alexfranz
+      name: homebrew-tap
+    homepage: https://github.com/alexfranz/hush-cli
+    description: Context-efficient command runner for coding agents
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
