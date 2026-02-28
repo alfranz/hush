@@ -38,9 +38,8 @@ func applyGrep(b []byte, pattern string) []byte {
 	if err != nil {
 		return b // invalid pattern, return unfiltered
 	}
-	lines := bytes.Split(b, []byte("\n"))
 	var matched [][]byte
-	for _, line := range lines {
+	for line := range bytes.SplitSeq(b, []byte("\n")) {
 		if re.Match(line) {
 			matched = append(matched, line)
 		}

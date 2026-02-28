@@ -2,7 +2,9 @@ package cli
 
 import (
 	"context"
+	"maps"
 	"os"
+	"slices"
 
 	"github.com/alfranz/hush/internal/config"
 	"github.com/alfranz/hush/internal/filter"
@@ -18,10 +20,7 @@ func registerNamedChecks(root *cobra.Command) {
 	}
 
 	// Collect check names in order for "all" command
-	var checkNames []string
-	for name := range cfg.Checks {
-		checkNames = append(checkNames, name)
-	}
+	checkNames := slices.Collect(maps.Keys(cfg.Checks))
 
 	// Register individual check commands
 	for name, check := range cfg.Checks {
