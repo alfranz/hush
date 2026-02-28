@@ -56,9 +56,9 @@ Appends wall-clock duration. On by default, `--no-time` to disable.
 
 ### Batch mode
 ```
-hush batch "ruff check ." "mypy src/" "pytest -x --agent-output"
+hush batch "ruff check ." "ty check src/" "pytest -x --agent-output"
 ✓ ruff (0.3s)
-✓ mypy (2.1s)
+✓ ty (0.4s)
 ✗ pytest (0.9s)
   FAILED tests/test_api.py::test_create - assert 201 == 400
 ```
@@ -71,7 +71,7 @@ checks:
   lint:
     cmd: ruff check .
   types:
-    cmd: mypy src/
+    cmd: ty check src/
     grep: "error:"
   test:
     cmd: pytest -x
