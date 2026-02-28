@@ -53,20 +53,19 @@ hush --tail 30 "npm test"          # last 30 lines
 hush --grep "error|FAIL" "make"    # lines matching pattern
 hush --head 20 "cargo build"       # first 20 lines
 
-# Agent mode (strips ANSI, collapses tracebacks, removes noise)
-hush --agent "pytest -x"
-
 # Batch mode
-hush batch "ruff check ." "mypy src/" "pytest -x"
+hush batch "ruff check ." "ty check src/" "pytest -x"
 # ✓ ruff (0.3s)
-# ✓ mypy (2.1s)
+# ✓ ty (0.4s)
 # ✓ 2/2 checks passed (2.4s)
 
 # Continue on failure
 hush batch --continue "ruff check ." "false" "pytest -x"
 ```
 
-## Config File
+## Config File (optional)
+
+For one-off commands, flags are enough. A config file is useful when you have multiple tools to run and want to bake in the right filters for each — so agents can just call `hush lint` or `hush all` without repeating flags every time.
 
 Create `.hush.yaml` in your project root:
 
@@ -75,7 +74,7 @@ checks:
   lint:
     cmd: ruff check .
   types:
-    cmd: mypy src/
+    cmd: ty check src/
     grep: "error:"
   test:
     cmd: pytest -x
@@ -97,7 +96,6 @@ hush all           # run all checks in order
 | `--tail N` | Show only last N lines on failure |
 | `--head N` | Show only first N lines on failure |
 | `--grep PATTERN` | Filter output to matching lines |
-| `--agent` | Agent mode: strip noise for LLM context |
 | `--no-time` | Suppress duration |
 | `--color` | Force colored output |
 | `--no-color` | Disable colored output |

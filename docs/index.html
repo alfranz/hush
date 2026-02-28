@@ -433,9 +433,9 @@ hush <span class="a">--head</span> 20 <span class="s">"cargo build"</span></code
 <section id="batch">
   <h2><a class="hash" href="#batch">#</a> Batch Mode</h2>
   <p>Run multiple commands in sequence with a combined summary.</p>
-  <pre><code>hush batch <span class="s">"ruff check ."</span> <span class="s">"mypy src/"</span> <span class="s">"pytest -x"</span>
+  <pre><code>hush batch <span class="s">"ruff check ."</span> <span class="s">"ty check src/"</span> <span class="s">"pytest -x"</span>
 <span class="g">✓</span> ruff (0.3s)
-<span class="g">✓</span> mypy (2.1s)
+<span class="g">✓</span> ty (0.4s)
 <span class="g">✓</span> pytest (1.8s)
 <span class="g">✓</span> 3/3 checks passed (4.2s)</code></pre>
 
@@ -456,7 +456,7 @@ hush <span class="a">--head</span> 20 <span class="s">"cargo build"</span></code
   <span class="y">lint</span>:
     <span class="y">cmd</span>: ruff check .
   <span class="y">types</span>:
-    <span class="y">cmd</span>: mypy src/
+    <span class="y">cmd</span>: ty check src/
     <span class="y">grep</span>: <span class="s">"error:"</span>
   <span class="y">test</span>:
     <span class="y">cmd</span>: pytest -x
@@ -468,7 +468,7 @@ hush <span class="a">--head</span> 20 <span class="s">"cargo build"</span></code
 
 hush all    <span class="c"># run all checks in order</span>
 <span class="g">✓</span> ruff (0.3s)
-<span class="g">✓</span> mypy (2.1s)
+<span class="g">✓</span> ty (0.4s)
 <span class="g">✓</span> pytest (1.8s)
 <span class="g">✓</span> 3/3 checks passed (4.2s)</code></pre>
 </section>
@@ -492,13 +492,13 @@ hush <span class="a">--label</span> <span class="s">"integration"</span> <span c
 
   <div class="tip">
     <div class="tip-label">Tip</div>
-    <p><code>--tb=short</code> gives pytest shorter tracebacks, and hush's agent mode compresses them further.</p>
+    <p><code>--tb=short</code> keeps pytest tracebacks concise, reducing the output hush needs to filter on failure.</p>
   </div>
 
-  <h3><span class="lang-tag python">Python</span> Grep for ruff / mypy errors</h3>
+  <h3><span class="lang-tag python">Python</span> Grep for ruff / ty errors</h3>
   <p>Linters can produce huge output. Filter to just the actionable lines.</p>
-  <pre><code><span class="c"># Only show lines with "error" for mypy</span>
-hush <span class="a">--grep</span> <span class="s">"error:"</span> <span class="s">"mypy src/"</span>
+  <pre><code><span class="c"># Only show lines with "error" for ty</span>
+hush <span class="a">--grep</span> <span class="s">"error:"</span> <span class="s">"ty check src/"</span>
 
 <span class="c"># Ruff is usually concise, but cap it anyway</span>
 hush <span class="a">--tail</span> 20 <span class="s">"ruff check ."</span></code></pre>
@@ -553,7 +553,7 @@ hush <span class="a">--grep</span> <span class="s">"FAILED|error\\["</span> <spa
   <span class="y">lint</span>:
     <span class="y">cmd</span>: ruff check .
   <span class="y">types</span>:
-    <span class="y">cmd</span>: mypy src/
+    <span class="y">cmd</span>: ty check src/
     <span class="y">grep</span>: <span class="s">"error:"</span>
   <span class="y">test</span>:
     <span class="y">cmd</span>: pytest -x --tb=short
@@ -568,10 +568,10 @@ hush all</code></pre>
     <p>Run lint, type-check, and tests in one batch. The agent sees a clean summary or exactly which step failed.</p>
     <pre><code>hush batch <span class="a">--continue</span> \
   <span class="s">"ruff check ."</span> \
-  <span class="s">"mypy src/"</span> \
+  <span class="s">"ty check src/"</span> \
   <span class="s">"pytest -x --tb=short"</span>
 <span class="g">✓</span> ruff (0.3s)
-<span class="g">✓</span> mypy (2.1s)
+<span class="g">✓</span> ty (0.4s)
 <span class="g">✓</span> pytest (1.8s)
 <span class="g">✓</span> 3/3 checks passed (4.2s)</code></pre>
   </div>
@@ -599,12 +599,29 @@ hush <span class="s">"npx jest auth.test.ts"</span></code></pre>
 
   <div class="workflow-card">
     <h4>5. Agent instructions integration</h4>
-    <p>Add hush to your agent's system instructions (CLAUDE.md, .cursor/rules, AGENTS.md, etc.) so it uses hush by default.</p>
-    <pre><code><span class="c"># In CLAUDE.md, .cursor/rules, or AGENTS.md:</span>
-Always use hush to run tests and linters:
-  hush "pytest -x --tb=short"
-  hush --grep "error" "mypy src/"
-  hush all   <span class="c"># if .hush.yaml is present</span></code></pre>
+    <p>Add the snippet below to your <code>CLAUDE.md</code> or <code>AGENTS.md</code>. The key point: agents will naturally reach for bare commands like <code>pytest tests/test_foo.py::test_name</code> — the rule needs to cover individual test runs, not just full suites.</p>
+    <pre><code><span class="c">## Running shell commands</span>
+
+Always wrap test, lint, and build commands in `hush` — including
+targeted runs against a single file or test function:
+
+<span class="c"># Tests — full suite or individual file / function</span>
+hush <span class="s">"pytest -x --tb=short"</span>
+hush <span class="s">"pytest tests/test_auth.py -x"</span>
+hush <span class="s">"pytest tests/test_auth.py::test_login -x"</span>
+hush <span class="s">"go test ./..."</span>
+hush <span class="s">"go test ./internal/runner/ -run TestRun"</span>
+hush <span class="s">"npx jest auth.test.ts --no-coverage"</span>
+
+<span class="c"># Linters and type checkers</span>
+hush <span class="s">"ruff check ."</span>
+hush <span class="s">"ty check src/"</span>
+
+<span class="c"># If .hush.yaml is present</span>
+hush all
+
+Never run these bare — hush keeps output concise on success and
+surfaces only the relevant lines on failure.</code></pre>
   </div>
 
   <div class="tip tip-warn">

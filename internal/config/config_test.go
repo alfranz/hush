@@ -35,7 +35,7 @@ func TestLoadConfig(t *testing.T) {
     tail: 40
     grep: "FAIL"
   types:
-    cmd: mypy src/
+    cmd: ty check src/
     agent: true
 `)
 	os.WriteFile(filepath.Join(tmp, ".hush.yaml"), content, 0644)
