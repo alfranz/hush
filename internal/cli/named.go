@@ -66,10 +66,9 @@ func runNamedCheck(check config.Check) error {
 
 	// Merge flags: check config takes precedence for filter options, CLI flags for output options
 	filterOpts := filter.Options{
-		Head:      check.Head,
-		Tail:      check.Tail,
-		Grep:      check.Grep,
-		AgentMode: check.Agent,
+		Head: check.Head,
+		Tail: check.Tail,
+		Grep: check.Grep,
 	}
 
 	// CLI flags can override/augment
@@ -81,9 +80,6 @@ func runNamedCheck(check config.Check) error {
 	}
 	if flags.grep != "" {
 		filterOpts.Grep = flags.grep
-	}
-	if flags.agent {
-		filterOpts.AgentMode = true
 	}
 	if flags.noColor {
 		filterOpts.StripANSI = true

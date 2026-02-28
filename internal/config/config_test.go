@@ -34,9 +34,6 @@ func TestLoadConfig(t *testing.T) {
     cmd: pytest -x
     tail: 40
     grep: "FAIL"
-  types:
-    cmd: ty check src/
-    agent: true
 `)
 	os.WriteFile(filepath.Join(tmp, ".hush.yaml"), content, 0644)
 	os.Chdir(tmp)
@@ -48,8 +45,8 @@ func TestLoadConfig(t *testing.T) {
 	if cfg == nil {
 		t.Fatal("expected config, got nil")
 	}
-	if len(cfg.Checks) != 3 {
-		t.Errorf("expected 3 checks, got %d", len(cfg.Checks))
+	if len(cfg.Checks) != 2 {
+		t.Errorf("expected 2 checks, got %d", len(cfg.Checks))
 	}
 	lint := cfg.Checks["lint"]
 	if lint.Cmd != "ruff check ." {
@@ -61,9 +58,5 @@ func TestLoadConfig(t *testing.T) {
 	}
 	if test.Grep != "FAIL" {
 		t.Errorf("expected grep FAIL, got %q", test.Grep)
-	}
-	types := cfg.Checks["types"]
-	if !types.Agent {
-		t.Error("expected agent mode for types check")
 	}
 }

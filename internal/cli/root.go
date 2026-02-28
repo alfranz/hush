@@ -70,7 +70,6 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		Tail:      flags.tail,
 		Grep:      flags.grep,
 		StripANSI: flags.noColor,
-		AgentMode: flags.agent,
 	})
 
 	output.PrintResult(os.Stdout, result.Label, result.ExitCode, result.Duration, filtered, output.Options{
