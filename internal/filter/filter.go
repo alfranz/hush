@@ -10,28 +10,22 @@ type Options struct {
 	Tail      int
 	Grep      string
 	StripANSI bool
-	AgentMode bool
 }
 
 func Apply(raw []byte, opts Options) []byte {
 	result := raw
 
-	// 1. ANSI stripping (agent mode implies this)
-	if opts.StripANSI || opts.AgentMode {
+	// 1. ANSI stripping
+	if opts.StripANSI {
 		result = StripANSI(result)
 	}
 
-	// 2. Agent mode transformations
-	if opts.AgentMode {
-		result = ApplyAgentMode(result)
-	}
-
-	// 3. Grep filter
+	// 2. Grep filter
 	if opts.Grep != "" {
 		result = applyGrep(result, opts.Grep)
 	}
 
-	// 4. Head/Tail
+	// 3. Head/Tail
 	if opts.Head > 0 || opts.Tail > 0 {
 		result = applyHeadTail(result, opts.Head, opts.Tail)
 	}

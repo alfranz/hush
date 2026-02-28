@@ -10,7 +10,6 @@ type sharedFlags struct {
 	noTime  bool
 	color   bool
 	noColor bool
-	agent   bool
 }
 
 func addSharedFlags(cmd *cobra.Command, f *sharedFlags) {
@@ -21,7 +20,6 @@ func addSharedFlags(cmd *cobra.Command, f *sharedFlags) {
 	cmd.PersistentFlags().BoolVar(&f.noTime, "no-time", false, "Suppress duration in output")
 	cmd.PersistentFlags().BoolVar(&f.color, "color", false, "Force colored output")
 	cmd.PersistentFlags().BoolVar(&f.noColor, "no-color", false, "Disable colored output")
-	cmd.PersistentFlags().BoolVar(&f.agent, "agent", false, "Agent mode: strip ANSI, collapse tracebacks, remove noise")
 }
 
 func (f *sharedFlags) colorOpt() *bool {

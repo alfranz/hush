@@ -56,7 +56,6 @@ func executeBatch(commands []string, f sharedFlags, continueOnError bool) error 
 			Tail:      f.tail,
 			Grep:      f.grep,
 			StripANSI: f.noColor,
-			AgentMode: f.agent,
 		})
 
 		output.PrintResult(os.Stdout, result.Label, result.ExitCode, result.Duration, filtered, output.Options{

@@ -18,7 +18,6 @@ type Check struct {
 	Grep  string `yaml:"grep" mapstructure:"grep"`
 	Tail  int    `yaml:"tail" mapstructure:"tail"`
 	Head  int    `yaml:"head" mapstructure:"head"`
-	Agent bool   `yaml:"agent" mapstructure:"agent"`
 }
 
 func Load() (*Config, error) {
