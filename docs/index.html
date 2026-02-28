@@ -462,8 +462,6 @@ hush <span class="a">--head</span> 20 <span class="s">"cargo build"</span></code
   <p>Define named checks in <code>.hush.yaml</code> at your project root:</p>
   <pre><code><span class="c"># .hush.yaml</span>
 <span class="y">defaults</span>:
-  <span class="y">tail</span>: 40
-  <span class="y">grep</span>: <span class="s">"error"</span>
   <span class="y">continue</span>: true
 
 <span class="y">checks</span>:
@@ -566,7 +564,6 @@ hush <span class="a">--grep</span> <span class="s">"FAILED|error\\["</span> <spa
     <p>Define your project's checks once, then the agent can run them all with a single command. This is not a git hook — the agent runs it explicitly.</p>
     <pre><code><span class="c"># .hush.yaml</span>
 <span class="y">defaults</span>:
-  <span class="y">tail</span>: 40
   <span class="y">continue</span>: true
 
 <span class="y">checks</span>:

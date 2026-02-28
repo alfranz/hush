@@ -71,8 +71,6 @@ Create `.hush.yaml` in your project root:
 
 ```yaml
 defaults:
-  tail: 40
-  grep: "error"
   continue: true
 
 checks:
@@ -83,7 +81,7 @@ checks:
     grep: "error:"
   test:
     cmd: pytest -x
-    tail: 40        # overrides defaults.tail for this check
+    tail: 40
 ```
 
 Then run named checks:
