@@ -1,0 +1,7 @@
+checks:
+  passingtest:
+    cmd: pytest pass/ -q
+    label: mytest
+  failingtest:
+    cmd: pytest fail/ -q
+    grep: FAILED

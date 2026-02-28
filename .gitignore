@@ -1,2 +1,4 @@
 bin/
 dist/
+tests/integration/suites/hush
+.DS_Store
