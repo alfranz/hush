@@ -3,111 +3,35 @@ package output
 import (
 	"fmt"
 	"io"
-	"os"
 	"strings"
-	"time"
-
-	"golang.org/x/term"
 )
 
-type Options struct {
-	NoTime bool
-	Color  *bool // nil = auto, true = force, false = disable
-}
-
-func isTTY() bool {
-	return term.IsTerminal(int(os.Stdout.Fd()))
-}
-
-func useColor(opt *bool) bool {
-	if opt != nil {
-		return *opt
-	}
-	return isTTY()
-}
-
-func PrintResult(w io.Writer, label string, exitCode int, duration time.Duration, filteredOutput []byte, opts Options) {
-	color := useColor(opts.Color)
-
+func PrintResult(w io.Writer, label string, exitCode int, filteredOutput []byte) {
 	if exitCode == 0 {
-		printSuccess(w, label, duration, opts.NoTime, color)
+		printSuccess(w, label)
 	} else {
-		printFailure(w, label, duration, filteredOutput, opts.NoTime, color)
+		printFailure(w, label, filteredOutput)
 	}
 }
 
-func printSuccess(w io.Writer, label string, duration time.Duration, noTime, color bool) {
-	if color {
-		fmt.Fprintf(w, "\x1b[32m✓\x1b[0m %s", label)
-	} else {
-		fmt.Fprintf(w, "✓ %s", label)
-	}
-	if !noTime {
-		dur := formatDuration(duration)
-		if color {
-			fmt.Fprintf(w, " \x1b[2m(%s)\x1b[0m", dur)
-		} else {
-			fmt.Fprintf(w, " (%s)", dur)
-		}
-	}
-	fmt.Fprintln(w)
+func printSuccess(w io.Writer, label string) {
+	fmt.Fprintf(w, "✓ %s\n", label)
 }
 
-func printFailure(w io.Writer, label string, duration time.Duration, output []byte, noTime, color bool) {
-	if color {
-		fmt.Fprintf(w, "\x1b[31m✗\x1b[0m %s", label)
-	} else {
-		fmt.Fprintf(w, "✗ %s", label)
-	}
-	if !noTime {
-		dur := formatDuration(duration)
-		if color {
-			fmt.Fprintf(w, " \x1b[2m(%s)\x1b[0m", dur)
-		} else {
-			fmt.Fprintf(w, " (%s)", dur)
-		}
-	}
-	fmt.Fprintln(w)
+func printFailure(w io.Writer, label string, output []byte) {
+	fmt.Fprintf(w, "✗ %s\n", label)
 	if len(output) > 0 {
 		// Indent each line of output with 2 spaces
 		fmt.Fprintf(w, "  %s\n", indentOutput(output))
 	}
 }
 
-func PrintBatchSummary(w io.Writer, passed, total int, duration time.Duration, noTime bool, colorOpt *bool) {
-	color := useColor(colorOpt)
+func PrintBatchSummary(w io.Writer, passed, total int) {
 	if passed == total {
-		if color {
-			fmt.Fprintf(w, "\x1b[32m✓\x1b[0m %d/%d checks passed", passed, total)
-		} else {
-			fmt.Fprintf(w, "✓ %d/%d checks passed", passed, total)
-		}
+		fmt.Fprintf(w, "✓ %d/%d checks passed\n", passed, total)
 	} else {
-		if color {
-			fmt.Fprintf(w, "\x1b[31m✗\x1b[0m %d/%d checks passed", passed, total)
-		} else {
-			fmt.Fprintf(w, "✗ %d/%d checks passed", passed, total)
-		}
+		fmt.Fprintf(w, "✗ %d/%d checks passed\n", passed, total)
 	}
-	if !noTime {
-		dur := formatDuration(duration)
-		if color {
-			fmt.Fprintf(w, " \x1b[2m(%s)\x1b[0m", dur)
-		} else {
-			fmt.Fprintf(w, " (%s)", dur)
-		}
-	}
-	fmt.Fprintln(w)
-}
-
-func formatDuration(d time.Duration) string {
-	if d < time.Second {
-		return fmt.Sprintf("%.1fs", d.Seconds())
-	}
-	if d < time.Minute {
-		return fmt.Sprintf("%.1fs", d.Seconds())
-	}
-	return fmt.Sprintf("%.0fm%.0fs", d.Minutes(), d.Seconds()-float64(int(d.Minutes()))*60)
 }
 
 func indentOutput(b []byte) string {

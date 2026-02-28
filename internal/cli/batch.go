@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"os"
-	"time"
 
 	"github.com/alfranz/hush/internal/filter"
 	"github.com/alfranz/hush/internal/output"
@@ -34,11 +33,18 @@ func newBatchCmd() *cobra.Command {
 }
 
 func runBatch(cmd *cobra.Command, args []string) error {
-	return executeBatch(args, batchFlags.sharedFlags, batchFlags.continueOnError)
+	cfg := loadConfigQuiet()
+	f := applyDefaults(cmd, batchFlags.sharedFlags, cfg)
+
+	continueOnError := batchFlags.continueOnError
+	if !cmd.Flags().Changed("continue") && cfg != nil && cfg.Defaults.Continue {
+		continueOnError = true
+	}
+
+	return executeBatch(args, f, continueOnError)
 }
 
 func executeBatch(commands []string, f sharedFlags, continueOnError bool) error {
-	start := time.Now()
 	passed := 0
 	total := len(commands)
 	firstFailCode := 0
@@ -55,13 +61,10 @@ func executeBatch(commands []string, f sharedFlags, continueOnError bool) error 
 			Head:      f.head,
 			Tail:      f.tail,
 			Grep:      f.grep,
-			StripANSI: f.noColor,
+			StripANSI: true,
 		})
 
-		output.PrintResult(os.Stdout, result.Label, result.ExitCode, result.Duration, filtered, output.Options{
-			NoTime: f.noTime,
-			Color:  f.colorOpt(),
-		})
+		output.PrintResult(os.Stdout, result.Label, result.ExitCode, filtered)
 
 		if result.ExitCode == 0 {
 			passed++
@@ -75,11 +78,9 @@ func executeBatch(commands []string, f sharedFlags, continueOnError bool) error 
 		}
 	}
 
-	duration := time.Since(start)
-
 	// Print summary if all passed or we ran all commands
 	if passed == total || continueOnError {
-		output.PrintBatchSummary(os.Stdout, passed, total, duration, f.noTime, f.colorOpt())
+		output.PrintBatchSummary(os.Stdout, passed, total)
 	}
 
 	if firstFailCode != 0 {

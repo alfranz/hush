@@ -9,7 +9,15 @@ import (
 )
 
 type Config struct {
-	Checks map[string]Check `yaml:"checks" mapstructure:"checks"`
+	Defaults Defaults         `yaml:"defaults" mapstructure:"defaults"`
+	Checks   map[string]Check `yaml:"checks" mapstructure:"checks"`
+}
+
+type Defaults struct {
+	Tail     int    `yaml:"tail" mapstructure:"tail"`
+	Head     int    `yaml:"head" mapstructure:"head"`
+	Grep     string `yaml:"grep" mapstructure:"grep"`
+	Continue bool   `yaml:"continue" mapstructure:"continue"`
 }
 
 type Check struct {
