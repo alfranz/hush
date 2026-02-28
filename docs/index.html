@@ -379,7 +379,7 @@
     </div>
     <div>
       <div class="label">With hush (~4 tokens)</div>
-      <pre><code><span class="g">✓</span> pytest (3.4s)</code></pre>
+      <pre><code><span class="g">✓</span> pytest</code></pre>
     </div>
   </div>
 
@@ -403,28 +403,28 @@
   <h3>Basic</h3>
   <pre><code><span class="c"># Wrap any command</span>
 hush <span class="s">"pytest -x"</span>
-<span class="g">✓</span> pytest (1.8s)
+<span class="g">✓</span> pytest
 
 <span class="c"># On failure, shows filtered output</span>
 hush <span class="s">"pytest -x"</span>
-<span class="r">✗</span> pytest (0.4s)
+<span class="r">✗</span> pytest
   FAILED tests/test_auth.py::test_login - assert 200 == 401</code></pre>
 
   <h3>Custom labels</h3>
   <p>By default, hush derives the label from the command name. Use <code>--label</code> to override it — especially useful when running the same tool multiple times.</p>
   <pre><code><span class="c"># Default: label is derived from command ("pytest")</span>
 hush <span class="s">"pytest tests/unit"</span>
-<span class="g">✓</span> pytest (1.2s)
+<span class="g">✓</span> pytest
 
 hush <span class="s">"pytest tests/integration"</span>
-<span class="r">✗</span> pytest (0.4s)         <span class="c"># which suite failed?</span>
+<span class="r">✗</span> pytest         <span class="c"># which suite failed?</span>
 
 <span class="c"># With --label: easy to tell apart</span>
 hush <span class="a">--label</span> <span class="s">"unit"</span> <span class="s">"pytest tests/unit"</span>
-<span class="g">✓</span> unit (1.2s)
+<span class="g">✓</span> unit
 
 hush <span class="a">--label</span> <span class="s">"integration"</span> <span class="s">"pytest tests/integration"</span>
-<span class="r">✗</span> integration (0.4s)    <span class="c"># clear</span></code></pre>
+<span class="r">✗</span> integration    <span class="c"># clear</span></code></pre>
 
   <h3>Filtering output</h3>
   <pre><code><span class="c"># Last 30 lines of output</span>
@@ -443,17 +443,17 @@ hush <span class="a">--head</span> 20 <span class="s">"cargo build"</span></code
   <h2><a class="hash" href="#batch">#</a> Batch Mode</h2>
   <p>Run multiple commands in sequence with a combined summary.</p>
   <pre><code>hush batch <span class="s">"ruff check ."</span> <span class="s">"ty check src/"</span> <span class="s">"pytest -x"</span>
-<span class="g">✓</span> ruff (0.3s)
-<span class="g">✓</span> ty (0.4s)
-<span class="g">✓</span> pytest (1.8s)
-<span class="g">✓</span> 3/3 checks passed (4.2s)</code></pre>
+<span class="g">✓</span> ruff
+<span class="g">✓</span> ty
+<span class="g">✓</span> pytest
+<span class="g">✓</span> 3/3 checks passed</code></pre>
 
   <p>Use <code>--continue</code> to run all commands even if one fails:</p>
   <pre><code>hush batch <span class="a">--continue</span> <span class="s">"ruff check ."</span> <span class="s">"false"</span> <span class="s">"pytest -x"</span>
-<span class="g">✓</span> ruff (0.3s)
-<span class="r">✗</span> false (0.0s)
-<span class="g">✓</span> pytest (1.8s)
-<span class="r">✗</span> 2/3 checks passed (2.1s)</code></pre>
+<span class="g">✓</span> ruff
+<span class="r">✗</span> false
+<span class="g">✓</span> pytest
+<span class="r">✗</span> 2/3 checks passed</code></pre>
 </section>
 
 <!-- Config File -->
@@ -461,6 +461,11 @@ hush <span class="a">--head</span> 20 <span class="s">"cargo build"</span></code
   <h2><a class="hash" href="#config">#</a> Config File</h2>
   <p>Define named checks in <code>.hush.yaml</code> at your project root:</p>
   <pre><code><span class="c"># .hush.yaml</span>
+<span class="y">defaults</span>:
+  <span class="y">tail</span>: 40
+  <span class="y">grep</span>: <span class="s">"error"</span>
+  <span class="y">continue</span>: true
+
 <span class="y">checks</span>:
   <span class="y">lint</span>:
     <span class="y">cmd</span>: ruff check .
@@ -471,15 +476,17 @@ hush <span class="a">--head</span> 20 <span class="s">"cargo build"</span></code
     <span class="y">cmd</span>: pytest -x
     <span class="y">tail</span>: 40</code></pre>
 
+  <p>Settings in <code>defaults</code> apply to all commands (root, batch, and named checks) unless overridden by per-check config or CLI flags. Precedence: <strong>CLI flags > per-check config > defaults</strong>.</p>
+
   <p>Then run by name:</p>
   <pre><code>hush lint   <span class="c"># run a single check</span>
-<span class="g">✓</span> ruff (0.3s)
+<span class="g">✓</span> ruff
 
 hush all    <span class="c"># run all checks in order</span>
-<span class="g">✓</span> ruff (0.3s)
-<span class="g">✓</span> ty (0.4s)
-<span class="g">✓</span> pytest (1.8s)
-<span class="g">✓</span> 3/3 checks passed (4.2s)</code></pre>
+<span class="g">✓</span> ruff
+<span class="g">✓</span> ty
+<span class="g">✓</span> pytest
+<span class="g">✓</span> 3/3 checks passed</code></pre>
 </section>
 
 <!-- Best Practices -->
@@ -558,6 +565,10 @@ hush <span class="a">--grep</span> <span class="s">"FAILED|error\\["</span> <spa
     <h4>1. Define project checks in .hush.yaml</h4>
     <p>Define your project's checks once, then the agent can run them all with a single command. This is not a git hook — the agent runs it explicitly.</p>
     <pre><code><span class="c"># .hush.yaml</span>
+<span class="y">defaults</span>:
+  <span class="y">tail</span>: 40
+  <span class="y">continue</span>: true
+
 <span class="y">checks</span>:
   <span class="y">lint</span>:
     <span class="y">cmd</span>: ruff check .
@@ -579,10 +590,10 @@ hush all</code></pre>
   <span class="s">"ruff check ."</span> \
   <span class="s">"ty check src/"</span> \
   <span class="s">"pytest -x --tb=short"</span>
-<span class="g">✓</span> ruff (0.3s)
-<span class="g">✓</span> ty (0.4s)
-<span class="g">✓</span> pytest (1.8s)
-<span class="g">✓</span> 3/3 checks passed (4.2s)</code></pre>
+<span class="g">✓</span> ruff
+<span class="g">✓</span> ty
+<span class="g">✓</span> pytest
+<span class="g">✓</span> 3/3 checks passed</code></pre>
   </div>
 
   <div class="workflow-card">
@@ -651,10 +662,7 @@ surfaces only the relevant lines on failure.</code></pre>
       <tr><td><code>--tail N</code></td><td>Show only last N lines on failure</td></tr>
       <tr><td><code>--head N</code></td><td>Show only first N lines on failure</td></tr>
       <tr><td><code>--grep PATTERN</code></td><td>Filter output to lines matching pattern</td></tr>
-
-      <tr><td><code>--no-time</code></td><td>Suppress duration from summary</td></tr>
-      <tr><td><code>--color</code></td><td>Force colored output</td></tr>
-      <tr><td><code>--no-color</code></td><td>Disable colored output</td></tr>
+      <tr><td><code>--continue</code></td><td>Continue running after a failure (batch/all)</td></tr>
     </tbody>
   </table>
 </section>
