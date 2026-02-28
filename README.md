@@ -38,11 +38,11 @@ export PATH="$HOME/go/bin:$PATH"
 ```bash
 # Basic usage
 hush "pytest -x"
-# ✓ pytest (1.8s)
+# ✓ pytest
 
 # On failure, shows output
 hush "pytest -x"
-# ✗ pytest (0.4s)
+# ✗ pytest
 #   FAILED tests/test_auth.py::test_login - assert 200 == 401
 
 # Custom label
@@ -55,9 +55,9 @@ hush --head 20 "cargo build"       # first 20 lines
 
 # Batch mode
 hush batch "ruff check ." "ty check src/" "pytest -x"
-# ✓ ruff (0.3s)
-# ✓ ty (0.4s)
-# ✓ 2/2 checks passed (2.4s)
+# ✓ ruff
+# ✓ ty
+# ✓ 2/2 checks passed
 
 # Continue on failure
 hush batch --continue "ruff check ." "false" "pytest -x"
@@ -70,6 +70,9 @@ For one-off commands, flags are enough. A config file is useful when you have mu
 Create `.hush.yaml` in your project root:
 
 ```yaml
+defaults:
+  continue: true
+
 checks:
   lint:
     cmd: ruff check .
@@ -88,6 +91,8 @@ hush lint          # run a single check
 hush all           # run all checks in order
 ```
 
+Settings in `defaults` apply to all commands (root, batch, and named checks) unless overridden by per-check config or CLI flags. Precedence: **CLI flags > per-check config > defaults**.
+
 ## Flags
 
 | Flag | Description |
@@ -96,9 +101,7 @@ hush all           # run all checks in order
 | `--tail N` | Show only last N lines on failure |
 | `--head N` | Show only first N lines on failure |
 | `--grep PATTERN` | Filter output to matching lines |
-| `--no-time` | Suppress duration |
-| `--color` | Force colored output |
-| `--no-color` | Disable colored output |
+| `--continue` | Continue running after a failure (batch/all) |
 
 ## Token Savings
 
@@ -135,7 +138,7 @@ tests/test_auth.py::test_login_invalid_password PASSED                   [  4%]
 =============================== 47 passed in 3.42s ================================
 
 # With hush (1 line, ~4 tokens)
-✓ pytest (3.4s)
+✓ pytest
 ```
 
 </details>

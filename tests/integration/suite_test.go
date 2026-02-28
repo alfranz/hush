@@ -152,39 +152,25 @@ func TestFlags(t *testing.T) {
 			[]string{"hush", "--label", "mycheck", "echo ok"},
 			0, "✓ mycheck", "",
 		},
-		// --no-time: (Xs) duration is omitted on success
+		// No ANSI codes in output (always plain text)
 		{
-			"no-time/pass",
+			"no-ansi-success",
 			"hush-python-pass",
-			[]string{"hush", "--no-time", "echo ok"},
+			[]string{"hush", "echo ok"},
+			0, "✓ echo", "\x1b[",
+		},
+		// No duration in output
+		{
+			"no-duration",
+			"hush-python-pass",
+			[]string{"hush", "echo ok"},
 			0, "✓ echo", "(",
 		},
-		// --no-time: (Xs) duration is omitted on failure
+		// ANSI stripping from command output
 		{
-			"no-time/fail",
-			"hush-python-pass",
-			[]string{"hush", "--no-time", "exit 1"},
-			1, "✗ exit", "(",
-		},
-		// --color: forces ANSI escape codes in hush's own summary line
-		{
-			"color",
-			"hush-python-pass",
-			[]string{"hush", "--color", "echo ok"},
-			0, "\x1b[", "",
-		},
-		// Without --no-color: pytest's ANSI output passes through into the failure block
-		{
-			"raw-ansi",
+			"strip-ansi",
 			"hush-python-fail",
 			[]string{"hush", "pytest tests/ -q --color=yes"},
-			1, "\x1b[", "",
-		},
-		// --no-color: strips ANSI from command output and suppresses it from hush's line
-		{
-			"no-color",
-			"hush-python-fail",
-			[]string{"hush", "--no-color", "pytest tests/ -q --color=yes"},
 			1, "✗", "\x1b[",
 		},
 		// --grep: failure block contains only lines matching the pattern
@@ -234,7 +220,7 @@ func TestBatch(t *testing.T) {
 			"pass",
 			"hush-python-pass",
 			[]string{"hush", "batch", "echo one", "echo two"},
-			0, "✓ 2/2 checks passed", "",
+			0, "✓ 2/2 checks passed", "(",
 		},
 		// First fails without --continue: stops early, no summary line
 		{
@@ -249,13 +235,6 @@ func TestBatch(t *testing.T) {
 			"hush-python-pass",
 			[]string{"hush", "batch", "--continue", "exit 1", "echo two"},
 			1, "✗ 1/2 checks passed", "",
-		},
-		// --no-time: batch summary line omits the (Xs) duration
-		{
-			"no-time",
-			"hush-python-pass",
-			[]string{"hush", "batch", "--no-time", "echo one", "echo two"},
-			0, "✓ 2/2 checks passed", "(",
 		},
 	}
 	for _, tc := range cases {

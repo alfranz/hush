@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/alfranz/hush/internal/config"
 	"github.com/alfranz/hush/internal/filter"
 	"github.com/alfranz/hush/internal/output"
 	"github.com/alfranz/hush/internal/runner"
@@ -57,28 +58,52 @@ func runRoot(cmd *cobra.Command, args []string) error {
 	}
 	command := args[0]
 
+	// Apply defaults from config if CLI flags not set
+	cfg := loadConfigQuiet()
+	f := applyDefaults(cmd, flags, cfg)
+
 	result, err := runner.Run(context.Background(), runner.Options{
 		Command: command,
-		Label:   flags.label,
+		Label:   f.label,
 	})
 	if err != nil {
 		return err
 	}
 
 	filtered := filter.Apply(result.Output, filter.Options{
-		Head:      flags.head,
-		Tail:      flags.tail,
-		Grep:      flags.grep,
-		StripANSI: flags.noColor,
+		Head:      f.head,
+		Tail:      f.tail,
+		Grep:      f.grep,
+		StripANSI: true,
 	})
 
-	output.PrintResult(os.Stdout, result.Label, result.ExitCode, result.Duration, filtered, output.Options{
-		NoTime: flags.noTime,
-		Color:  flags.colorOpt(),
-	})
+	output.PrintResult(os.Stdout, result.Label, result.ExitCode, filtered)
 
 	if result.ExitCode != 0 {
 		os.Exit(result.ExitCode)
 	}
 	return nil
+}
+
+// loadConfigQuiet loads config without failing on error.
+func loadConfigQuiet() *config.Config {
+	cfg, _ := config.Load()
+	return cfg
+}
+
+// applyDefaults merges config defaults into flags where CLI flags were not explicitly set.
+func applyDefaults(cmd *cobra.Command, f sharedFlags, cfg *config.Config) sharedFlags {
+	if cfg == nil {
+		return f
+	}
+	if !cmd.Flags().Changed("tail") && cfg.Defaults.Tail > 0 {
+		f.tail = cfg.Defaults.Tail
+	}
+	if !cmd.Flags().Changed("head") && cfg.Defaults.Head > 0 {
+		f.head = cfg.Defaults.Head
+	}
+	if !cmd.Flags().Changed("grep") && cfg.Defaults.Grep != "" {
+		f.grep = cfg.Defaults.Grep
+	}
+	return f
 }

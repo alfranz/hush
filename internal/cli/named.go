@@ -2,7 +2,9 @@ package cli
 
 import (
 	"context"
+	"maps"
 	"os"
+	"slices"
 
 	"github.com/alfranz/hush/internal/config"
 	"github.com/alfranz/hush/internal/filter"
@@ -18,20 +20,18 @@ func registerNamedChecks(root *cobra.Command) {
 	}
 
 	// Collect check names in order for "all" command
-	var checkNames []string
-	for name := range cfg.Checks {
-		checkNames = append(checkNames, name)
-	}
+	checkNames := slices.Collect(maps.Keys(cfg.Checks))
 
 	// Register individual check commands
 	for name, check := range cfg.Checks {
+		check := check
 		cmd := &cobra.Command{
 			Use:           name,
 			Short:         "Run " + name + " check from .hush.yaml",
 			SilenceErrors: true,
 			SilenceUsage:  true,
 			RunE: func(cmd *cobra.Command, args []string) error {
-				return runNamedCheck(check)
+				return runNamedCheck(check, cfg)
 			},
 		}
 		root.AddCommand(cmd)
@@ -48,14 +48,19 @@ func registerNamedChecks(root *cobra.Command) {
 			for _, name := range checkNames {
 				commands = append(commands, cfg.Checks[name].Cmd)
 			}
-			return executeBatch(commands, flags, false)
+			// Use defaults.continue for "all" command
+			continueOnError := cfg.Defaults.Continue
+			if cmd.Flags().Changed("continue") {
+				continueOnError, _ = cmd.Flags().GetBool("continue")
+			}
+			return executeBatch(commands, flags, continueOnError)
 		},
 	}
 	allCmd.Flags().BoolP("continue", "", false, "Continue running after a failure")
 	root.AddCommand(allCmd)
 }
 
-func runNamedCheck(check config.Check) error {
+func runNamedCheck(check config.Check, cfg *config.Config) error {
 	result, err := runner.Run(context.Background(), runner.Options{
 		Command: check.Cmd,
 		Label:   check.Label,
@@ -64,14 +69,30 @@ func runNamedCheck(check config.Check) error {
 		return err
 	}
 
-	// Merge flags: check config takes precedence for filter options, CLI flags for output options
+	// Precedence: CLI flags > per-check config > defaults > zero
 	filterOpts := filter.Options{
-		Head: check.Head,
-		Tail: check.Tail,
-		Grep: check.Grep,
+		StripANSI: true,
 	}
 
-	// CLI flags can override/augment
+	// Start with defaults
+	if cfg != nil {
+		filterOpts.Head = cfg.Defaults.Head
+		filterOpts.Tail = cfg.Defaults.Tail
+		filterOpts.Grep = cfg.Defaults.Grep
+	}
+
+	// Per-check config overrides defaults
+	if check.Head > 0 {
+		filterOpts.Head = check.Head
+	}
+	if check.Tail > 0 {
+		filterOpts.Tail = check.Tail
+	}
+	if check.Grep != "" {
+		filterOpts.Grep = check.Grep
+	}
+
+	// CLI flags override everything
 	if flags.head > 0 {
 		filterOpts.Head = flags.head
 	}
@@ -81,16 +102,10 @@ func runNamedCheck(check config.Check) error {
 	if flags.grep != "" {
 		filterOpts.Grep = flags.grep
 	}
-	if flags.noColor {
-		filterOpts.StripANSI = true
-	}
 
 	filtered := filter.Apply(result.Output, filterOpts)
 
-	output.PrintResult(os.Stdout, result.Label, result.ExitCode, result.Duration, filtered, output.Options{
-		NoTime: flags.noTime,
-		Color:  flags.colorOpt(),
-	})
+	output.PrintResult(os.Stdout, result.Label, result.ExitCode, filtered)
 
 	if result.ExitCode != 0 {
 		os.Exit(result.ExitCode)
