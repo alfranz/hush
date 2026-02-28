@@ -405,10 +405,21 @@
 hush <span class="s">"pytest -x"</span>
 <span class="g">✓</span> pytest
 
-<span class="c"># On failure, shows filtered output</span>
+<span class="c"># On failure, shows full output (traceback, assertion details, etc.)</span>
 hush <span class="s">"pytest -x"</span>
 <span class="r">✗</span> pytest
-  FAILED tests/test_auth.py::test_login - assert 200 == 401</code></pre>
+  <span class="c">=================================== FAILURES ===================================</span>
+  <span class="c">__________________________________ test_login __________________________________</span>
+
+      def test_login():
+          response = client.get("/auth/login")
+  >       assert response.status_code == 200
+  E       AssertionError: assert 401 == 200
+
+  tests/test_auth.py:10: AssertionError
+  <span class="c">=========================== short test summary info ============================</span>
+  FAILED tests/test_auth.py::test_login - AssertionError: assert 401 == 200
+  <span class="c">============================== 1 failed in 0.06s ===============================</span></code></pre>
 
   <h3>Custom labels</h3>
   <p>By default, hush derives the label from the command name. Use <code>--label</code> to override it — especially useful when running the same tool multiple times.</p>
@@ -435,6 +446,11 @@ hush <span class="a">--grep</span> <span class="s">"error|FAIL"</span> <span cla
 
 <span class="c"># First 20 lines</span>
 hush <span class="a">--head</span> 20 <span class="s">"cargo build"</span></code></pre>
+
+  <div class="tip tip-warn">
+    <div class="tip-label">Caution</div>
+    <p><code>--grep</code> and <code>--tail</code> are best suited for <strong>linters and build tools</strong> that produce high-volume output. For <strong>test runners</strong> (pytest, Jest, go test), prefer running without filters — the full traceback, assertion diffs, and source context are exactly what an agent needs to debug a failure. A <code>--grep "FAIL"</code> on pytest output, for example, strips away everything except the one-line summary.</p>
+  </div>
 
 </section>
 
@@ -491,8 +507,8 @@ hush all    <span class="c"># run all checks in order</span>
 <section id="best-practices">
   <h2><a class="hash" href="#best-practices">#</a> Best Practices</h2>
 
-  <h3><span class="lang-tag general">General</span> Combine filters for maximum context savings</h3>
-  <p>Filters stack: use <code>--grep</code> to find error lines, then <code>--tail</code> to limit how many are shown. This is especially useful for builds that emit hundreds of warnings.</p>
+  <h3><span class="lang-tag general">General</span> Combine filters for builds and linters</h3>
+  <p>Filters stack: use <code>--grep</code> to find error lines, then <code>--tail</code> to limit how many are shown. This works well for <strong>builds and linters</strong> where each error line is self-contained. For <strong>test runners</strong>, prefer no filters or just <code>--tail</code> — the full traceback gives agents the context they need to fix failures.</p>
   <pre><code>hush <span class="a">--grep</span> <span class="s">"error"</span> <span class="a">--tail</span> 10 <span class="s">"make build"</span></code></pre>
 
   <h3><span class="lang-tag general">General</span> Use labels when running the same tool multiple times</h3>
@@ -518,11 +534,11 @@ hush <span class="a">--grep</span> <span class="s">"error:"</span> <span class="
 hush <span class="a">--tail</span> 20 <span class="s">"ruff check ."</span></code></pre>
 
   <h3><span class="lang-tag js">JavaScript</span> Tame Jest and Vitest output</h3>
-  <p>Jest and Vitest are notoriously verbose. Use <code>--tail</code> to catch the summary and last failure, or <code>--grep</code> to pull specific failures.</p>
-  <pre><code><span class="c"># Grab the summary and last failure</span>
+  <p>Jest and Vitest are notoriously verbose. For test failures, prefer <code>--tail</code> over <code>--grep</code> — it preserves the traceback and assertion context that agents need to debug. Use <code>--grep</code> for linters like ESLint where each line is self-contained.</p>
+  <pre><code><span class="c"># Tail keeps the traceback + summary intact</span>
 hush <span class="a">--tail</span> 30 <span class="s">"npx jest --no-coverage"</span>
 
-<span class="c"># ESLint: just errors</span>
+<span class="c"># ESLint: just errors (each line is self-contained, grep is fine)</span>
 hush <span class="a">--grep</span> <span class="s">"error"</span> <span class="s">"npx eslint src/"</span></code></pre>
 
   <div class="tip">

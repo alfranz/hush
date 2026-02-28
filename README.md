@@ -40,15 +40,26 @@ export PATH="$HOME/go/bin:$PATH"
 hush "pytest -x"
 # ✓ pytest
 
-# On failure, shows output
+# On failure, shows full output (traceback, assertion details, etc.)
 hush "pytest -x"
 # ✗ pytest
-#   FAILED tests/test_auth.py::test_login - assert 200 == 401
+#   =================================== FAILURES ===================================
+#   __________________________________ test_login __________________________________
+#
+#       def test_login():
+#           response = client.get("/auth/login")
+#   >       assert response.status_code == 200
+#   E       AssertionError: assert 401 == 200
+#
+#   tests/test_auth.py:10: AssertionError
+#   =========================== short test summary info ============================
+#   FAILED tests/test_auth.py::test_login - AssertionError: assert 401 == 200
+#   ============================== 1 failed in 0.06s ===============================
 
 # Custom label
 hush --label "unit tests" "pytest tests/unit"
 
-# Filter output on failure
+# Filter output on failure (use with care — see note below)
 hush --tail 30 "npm test"          # last 30 lines
 hush --grep "error|FAIL" "make"    # lines matching pattern
 hush --head 20 "cargo build"       # first 20 lines
@@ -102,6 +113,8 @@ Settings in `defaults` apply to all commands (root, batch, and named checks) unl
 | `--head N` | Show only first N lines on failure |
 | `--grep PATTERN` | Filter output to matching lines |
 | `--continue` | Continue running after a failure (batch/all) |
+
+> **Note on `--grep` and test failures:** By default (no flags), hush prints the full command output on failure — including tracebacks, assertion diffs, and source context. This gives agents the most information to debug with. Use `--grep` and `--tail` primarily for **linters and build tools** that produce high-volume output. For **test runners** (pytest, Jest, go test), the unfiltered output is usually what the agent needs to fix the issue. A `--grep "FAIL"` on pytest output, for example, strips away the traceback and assertion details, leaving only the one-line summary.
 
 ## Token Savings
 
