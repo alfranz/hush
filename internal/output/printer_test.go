@@ -8,7 +8,7 @@ import (
 
 func TestPrintResultSuccess(t *testing.T) {
 	var buf bytes.Buffer
-	PrintResult(&buf, "echo", 0, nil)
+	PrintResult(&buf, "echo", 0, nil, 0, nil)
 	got := buf.String()
 	if got != "✓ echo\n" {
 		t.Errorf("expected '✓ echo\\n', got: %q", got)
@@ -17,7 +17,7 @@ func TestPrintResultSuccess(t *testing.T) {
 
 func TestPrintResultFailure(t *testing.T) {
 	var buf bytes.Buffer
-	PrintResult(&buf, "test", 1, []byte("FAIL: something broke\n"))
+	PrintResult(&buf, "test", 1, []byte("FAIL: something broke\n"), 0, nil)
 	got := buf.String()
 	if !strings.Contains(got, "✗ test") {
 		t.Errorf("expected failure marker, got: %q", got)
@@ -29,7 +29,7 @@ func TestPrintResultFailure(t *testing.T) {
 
 func TestPrintResultNoDuration(t *testing.T) {
 	var buf bytes.Buffer
-	PrintResult(&buf, "echo", 0, nil)
+	PrintResult(&buf, "echo", 0, nil, 0, nil)
 	got := buf.String()
 	if strings.Contains(got, "(") {
 		t.Errorf("expected no duration, got: %q", got)
@@ -38,10 +38,25 @@ func TestPrintResultNoDuration(t *testing.T) {
 
 func TestPrintResultNoANSI(t *testing.T) {
 	var buf bytes.Buffer
-	PrintResult(&buf, "echo", 0, nil)
+	PrintResult(&buf, "echo", 0, nil, 0, nil)
 	got := buf.String()
 	if strings.Contains(got, "\x1b[") {
 		t.Errorf("expected no ANSI codes, got: %q", got)
+	}
+}
+
+func TestPrintResultWarningSuccess(t *testing.T) {
+	var buf bytes.Buffer
+	PrintResult(&buf, "types", 0, nil, 3, []byte("w1\nw2"))
+	got := buf.String()
+	if !strings.Contains(got, "⚠ types (3 warnings)") {
+		t.Errorf("expected warning marker, got: %q", got)
+	}
+	if !strings.Contains(got, "  w1") || !strings.Contains(got, "  w2") {
+		t.Errorf("expected warning details, got: %q", got)
+	}
+	if !strings.Contains(got, "... and 1 more") {
+		t.Errorf("expected hidden warning count, got: %q", got)
 	}
 }
 

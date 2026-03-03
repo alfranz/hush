@@ -53,3 +53,24 @@ func TestApplyNoOp(t *testing.T) {
 		t.Errorf("expected passthrough, got: %q", got)
 	}
 }
+
+func TestMatchLines(t *testing.T) {
+	input := []byte("info\nwarning TS1000\nwarning TS2000\nerror\n")
+	got := MatchLines(input, `warning TS[0-9]+`)
+	if got.Count != 2 {
+		t.Fatalf("expected 2 matches, got %d", got.Count)
+	}
+	if string(got.Lines) != "warning TS1000\nwarning TS2000" {
+		t.Fatalf("unexpected matches: %q", string(got.Lines))
+	}
+}
+
+func TestMatchLinesInvalidPattern(t *testing.T) {
+	got := MatchLines([]byte("warning\n"), "[")
+	if got.Count != 0 {
+		t.Fatalf("expected 0 matches, got %d", got.Count)
+	}
+	if len(got.Lines) != 0 {
+		t.Fatalf("expected empty lines, got %q", string(got.Lines))
+	}
+}

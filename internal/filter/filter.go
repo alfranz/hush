@@ -12,6 +12,11 @@ type Options struct {
 	StripANSI bool
 }
 
+type MatchResult struct {
+	Lines []byte
+	Count int
+}
+
 func Apply(raw []byte, opts Options) []byte {
 	result := raw
 
@@ -61,4 +66,25 @@ func applyHeadTail(b []byte, head, tail int) []byte {
 		lines = lines[:head]
 	}
 	return bytes.Join(lines, []byte("\n"))
+}
+
+func MatchLines(b []byte, pattern string) MatchResult {
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return MatchResult{}
+	}
+
+	var matched [][]byte
+	count := 0
+	for line := range bytes.SplitSeq(b, []byte("\n")) {
+		if re.Match(line) {
+			matched = append(matched, line)
+			count++
+		}
+	}
+
+	return MatchResult{
+		Lines: bytes.Join(matched, []byte("\n")),
+		Count: count,
+	}
 }

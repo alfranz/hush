@@ -14,18 +14,22 @@ type Config struct {
 }
 
 type Defaults struct {
-	Tail     int    `yaml:"tail" mapstructure:"tail"`
-	Head     int    `yaml:"head" mapstructure:"head"`
-	Grep     string `yaml:"grep" mapstructure:"grep"`
-	Continue bool   `yaml:"continue" mapstructure:"continue"`
+	Tail        int    `yaml:"tail" mapstructure:"tail"`
+	Head        int    `yaml:"head" mapstructure:"head"`
+	Grep        string `yaml:"grep" mapstructure:"grep"`
+	WarnPattern string `yaml:"warn-pattern" mapstructure:"warn-pattern"`
+	WarnTail    int    `yaml:"warn-tail" mapstructure:"warn-tail"`
+	Continue    bool   `yaml:"continue" mapstructure:"continue"`
 }
 
 type Check struct {
-	Cmd   string `yaml:"cmd" mapstructure:"cmd"`
-	Label string `yaml:"label" mapstructure:"label"`
-	Grep  string `yaml:"grep" mapstructure:"grep"`
-	Tail  int    `yaml:"tail" mapstructure:"tail"`
-	Head  int    `yaml:"head" mapstructure:"head"`
+	Cmd         string `yaml:"cmd" mapstructure:"cmd"`
+	Label       string `yaml:"label" mapstructure:"label"`
+	Grep        string `yaml:"grep" mapstructure:"grep"`
+	WarnPattern string `yaml:"warn-pattern" mapstructure:"warn-pattern"`
+	WarnTail    int    `yaml:"warn-tail" mapstructure:"warn-tail"`
+	Tail        int    `yaml:"tail" mapstructure:"tail"`
+	Head        int    `yaml:"head" mapstructure:"head"`
 }
 
 func Load() (*Config, error) {

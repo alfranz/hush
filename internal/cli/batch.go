@@ -63,8 +63,9 @@ func executeBatch(commands []string, f sharedFlags, continueOnError bool) error 
 			Grep:      f.grep,
 			StripANSI: true,
 		})
+		warnings := buildWarningReport(result.Output, f)
 
-		output.PrintResult(os.Stdout, result.Label, result.ExitCode, filtered)
+		output.PrintResult(os.Stdout, result.Label, result.ExitCode, filtered, warnings.count, warnings.lines)
 
 		if result.ExitCode == 0 {
 			passed++

@@ -64,6 +64,11 @@ hush --tail 30 "npm test"          # last 30 lines
 hush --grep "error|FAIL" "make"    # lines matching pattern
 hush --head 20 "cargo build"       # first 20 lines
 
+# Warning-aware success (exit code still 0)
+hush --warn-pattern "warning TS[0-9]+" --warn-tail 5 "tsc --noEmit"
+# ⚠ tsc (3 warnings)
+#   src/auth.ts:42:3 - warning TS2304: Cannot find name 'userId'.
+
 # Batch mode
 hush batch "ruff check ." "ty check src/" "pytest -x"
 # ✓ ruff
@@ -90,6 +95,8 @@ checks:
   types:
     cmd: ty check src/
     grep: "error:"
+    warn-pattern: "warning TS[0-9]+"
+    warn-tail: 5
   test:
     cmd: pytest -x
     tail: 40
@@ -112,6 +119,8 @@ Settings in `defaults` apply to all commands (root, batch, and named checks) unl
 | `--tail N` | Show only last N lines on failure |
 | `--head N` | Show only first N lines on failure |
 | `--grep PATTERN` | Filter output to matching lines |
+| `--warn-pattern REGEX` | On success, match warning lines and emit `⚠` with details |
+| `--warn-tail N` | On warning-qualified success, show last N warning lines (default: 10) |
 | `--continue` | Continue running after a failure (batch/all) |
 
 > **Note on `--grep` and test failures:** By default (no flags), hush prints the full command output on failure — including tracebacks, assertion diffs, and source context. This gives agents the most information to debug with. Use `--grep` and `--tail` primarily for **linters and build tools** that produce high-volume output. For **test runners** (pytest, Jest, go test), the unfiltered output is usually what the agent needs to fix the issue. A `--grep "FAIL"` on pytest output, for example, strips away the traceback and assertion details, leaving only the one-line summary.
