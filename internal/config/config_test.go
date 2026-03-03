@@ -70,11 +70,15 @@ func TestLoadDefaults(t *testing.T) {
   tail: 40
   head: 10
   grep: "error"
+  warn-pattern: "warning TS[0-9]+"
+  warn-tail: 5
   continue: true
 
 checks:
   test:
     cmd: pytest -x
+    warn-pattern: "deprecated"
+    warn-tail: 3
 `)
 	os.WriteFile(filepath.Join(tmp, ".hush.yaml"), content, 0644)
 	os.Chdir(tmp)
@@ -95,8 +99,20 @@ checks:
 	if cfg.Defaults.Grep != "error" {
 		t.Errorf("expected defaults.grep 'error', got %q", cfg.Defaults.Grep)
 	}
+	if cfg.Defaults.WarnPattern != "warning TS[0-9]+" {
+		t.Errorf("expected defaults.warn-pattern, got %q", cfg.Defaults.WarnPattern)
+	}
+	if cfg.Defaults.WarnTail != 5 {
+		t.Errorf("expected defaults.warn-tail 5, got %d", cfg.Defaults.WarnTail)
+	}
 	if !cfg.Defaults.Continue {
 		t.Error("expected defaults.continue true")
+	}
+	if cfg.Checks["test"].WarnPattern != "deprecated" {
+		t.Errorf("expected check warn-pattern, got %q", cfg.Checks["test"].WarnPattern)
+	}
+	if cfg.Checks["test"].WarnTail != 3 {
+		t.Errorf("expected check warn-tail 3, got %d", cfg.Checks["test"].WarnTail)
 	}
 }
 
