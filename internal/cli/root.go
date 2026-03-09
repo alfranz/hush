@@ -76,8 +76,9 @@ func runRoot(cmd *cobra.Command, args []string) error {
 		Grep:      f.grep,
 		StripANSI: true,
 	})
+	warnings := buildWarningReport(result.Output, f)
 
-	output.PrintResult(os.Stdout, result.Label, result.ExitCode, filtered)
+	output.PrintResult(os.Stdout, result.Label, result.ExitCode, filtered, warnings.count, warnings.lines)
 
 	if result.ExitCode != 0 {
 		os.Exit(result.ExitCode)
@@ -104,6 +105,12 @@ func applyDefaults(cmd *cobra.Command, f sharedFlags, cfg *config.Config) shared
 	}
 	if !cmd.Flags().Changed("grep") && cfg.Defaults.Grep != "" {
 		f.grep = cfg.Defaults.Grep
+	}
+	if !cmd.Flags().Changed("warn-pattern") && cfg.Defaults.WarnPattern != "" {
+		f.warnPattern = cfg.Defaults.WarnPattern
+	}
+	if !cmd.Flags().Changed("warn-tail") && cfg.Defaults.WarnTail > 0 {
+		f.warnTail = cfg.Defaults.WarnTail
 	}
 	return f
 }

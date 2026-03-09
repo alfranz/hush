@@ -13,6 +13,8 @@ import (
 
 const binaryPath = "suites/hush"
 
+var containerCLI = "docker"
+
 type imageSpec struct {
 	tag      string
 	file     string
@@ -30,6 +32,8 @@ var images = []imageSpec{
 }
 
 func TestMain(m *testing.M) {
+	containerCLI = detectContainerCLI()
+
 	// Cross-compile hush for Linux
 	build := exec.Command("go", "build", "-o", binaryPath, "../../cmd/hush")
 	build.Env = append(os.Environ(), "GOOS=linux", "GOARCH=amd64", "CGO_ENABLED=0")
@@ -60,7 +64,7 @@ func TestMain(m *testing.M) {
 				args = append(args, "--build-arg", img.buildArg)
 			}
 			args = append(args, "suites/")
-			out, err := exec.Command("docker", args...).CombinedOutput()
+			out, err := exec.Command(containerCLI, args...).CombinedOutput()
 			if err != nil {
 				errCh <- buildErr{img.tag, out, err}
 			}
@@ -71,7 +75,7 @@ func TestMain(m *testing.M) {
 
 	failed := false
 	for e := range errCh {
-		fmt.Fprintf(os.Stderr, "docker build %s failed: %v\n%s\n", e.tag, e.err, e.out)
+		fmt.Fprintf(os.Stderr, "%s build %s failed: %v\n%s\n", containerCLI, e.tag, e.err, e.out)
 		failed = true
 	}
 	if failed {
@@ -84,7 +88,7 @@ func TestMain(m *testing.M) {
 // run executes docker run --rm <image> <cmd...> and returns combined output and exit code.
 func run(image string, cmd ...string) (string, int) {
 	args := append([]string{"run", "--rm", image}, cmd...)
-	out, err := exec.Command("docker", args...).CombinedOutput()
+	out, err := exec.Command(containerCLI, args...).CombinedOutput()
 	exitCode := 0
 	if err != nil {
 		if e, ok := err.(*exec.ExitError); ok {
@@ -92,6 +96,36 @@ func run(image string, cmd ...string) (string, int) {
 		}
 	}
 	return string(out), exitCode
+}
+
+func detectContainerCLI() string {
+	if cli := os.Getenv("HUSH_CONTAINER_CLI"); cli != "" {
+		return cli
+	}
+
+	if looksUsable("docker") {
+		return "docker"
+	}
+	if looksUsable("podman") {
+		return "podman"
+	}
+
+	if _, err := exec.LookPath("podman"); err == nil {
+		return "podman"
+	}
+	if _, err := exec.LookPath("docker"); err == nil {
+		return "docker"
+	}
+
+	return "docker"
+}
+
+func looksUsable(cli string) bool {
+	if _, err := exec.LookPath(cli); err != nil {
+		return false
+	}
+	cmd := exec.Command(cli, "info")
+	return cmd.Run() == nil
 }
 
 // assert checks exit code, an optional required substring, and an optional forbidden substring.
@@ -194,6 +228,20 @@ func TestFlags(t *testing.T) {
 			[]string{"hush", "--head", "2", "printf 'a\\nb\\nc\\nd\\ne\\n' && exit 1"},
 			1, "  a\n  b", "  e",
 		},
+		// --warn-pattern: success with matching output is reported as qualified success
+		{
+			"warn-pattern",
+			"hush-python-pass",
+			[]string{"hush", "--warn-pattern", "warning TS[0-9]+", "printf 'info\\nwarning TS1000\\n'"},
+			0, "⚠ printf (1 warning)", "✓",
+		},
+		// --warn-tail N: qualified success shows only the last N warning lines
+		{
+			"warn-tail",
+			"hush-python-pass",
+			[]string{"hush", "--warn-pattern", "warning TS[0-9]+", "--warn-tail", "2", "printf 'warning TS1000\\nwarning TS2000\\nwarning TS3000\\n'"},
+			0, "... and 1 more", "warning TS1000",
+		},
 	}
 	for _, tc := range cases {
 		tc := tc
@@ -260,6 +308,8 @@ func TestNamedChecks(t *testing.T) {
 		{"pass-with-label", []string{"hush", "passingtest"}, 0, "✓ mytest", ""},
 		// Named check with grep: failure block filtered to FAILED lines only
 		{"fail-with-grep", []string{"hush", "failingtest"}, 1, "FAILED", ""},
+		// Named check with warn-pattern: qualified success is emitted from YAML config
+		{"warn-from-config", []string{"hush", "warningtest"}, 0, "⚠ warningtest (2 warnings)", "warning TS1000"},
 		// hush all: runs all checks, exits non-zero because one check fails
 		{"all", []string{"hush", "all"}, 1, "✗", ""},
 	}

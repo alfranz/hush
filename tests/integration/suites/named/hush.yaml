@@ -5,3 +5,8 @@ checks:
   failingtest:
     cmd: pytest fail/ -q
     grep: FAILED
+  warningtest:
+    cmd: printf 'info\nwarning TS1000\nwarning TS2000\n'
+    label: warningtest
+    warn-pattern: "warning TS[0-9]+"
+    warn-tail: 1

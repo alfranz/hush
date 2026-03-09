@@ -53,7 +53,16 @@ func registerNamedChecks(root *cobra.Command) {
 			if cmd.Flags().Changed("continue") {
 				continueOnError, _ = cmd.Flags().GetBool("continue")
 			}
-			return executeBatch(commands, flags, continueOnError)
+			batchShared := flags
+			if cfg != nil {
+				if batchShared.warnPattern == "" {
+					batchShared.warnPattern = cfg.Defaults.WarnPattern
+				}
+				if batchShared.warnTail == 0 {
+					batchShared.warnTail = cfg.Defaults.WarnTail
+				}
+			}
+			return executeBatch(commands, batchShared, continueOnError)
 		},
 	}
 	allCmd.Flags().BoolP("continue", "", false, "Continue running after a failure")
@@ -103,9 +112,31 @@ func runNamedCheck(check config.Check, cfg *config.Config) error {
 		filterOpts.Grep = flags.grep
 	}
 
-	filtered := filter.Apply(result.Output, filterOpts)
+	warnFlags := sharedFlags{}
+	if cfg != nil {
+		warnFlags.warnPattern = cfg.Defaults.WarnPattern
+		warnFlags.warnTail = cfg.Defaults.WarnTail
+	}
+	if check.WarnPattern != "" {
+		warnFlags.warnPattern = check.WarnPattern
+	}
+	if check.WarnTail > 0 {
+		warnFlags.warnTail = check.WarnTail
+	}
+	if flags.warnPattern != "" {
+		warnFlags.warnPattern = flags.warnPattern
+	}
+	if flags.warnTail > 0 {
+		warnFlags.warnTail = flags.warnTail
+	}
+	warnFlags.head = filterOpts.Head
+	warnFlags.tail = filterOpts.Tail
+	warnFlags.grep = filterOpts.Grep
 
-	output.PrintResult(os.Stdout, result.Label, result.ExitCode, filtered)
+	filtered := filter.Apply(result.Output, filterOpts)
+	warnings := buildWarningReport(result.Output, warnFlags)
+
+	output.PrintResult(os.Stdout, result.Label, result.ExitCode, filtered, warnings.count, warnings.lines)
 
 	if result.ExitCode != 0 {
 		os.Exit(result.ExitCode)
