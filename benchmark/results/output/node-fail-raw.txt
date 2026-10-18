@@ -3,8 +3,8 @@
 > jest
 
 PASS test/queue.test.js
-PASS test/money.test.js
 PASS test/slug.test.js
+PASS test/money.test.js
 FAIL test/retry.test.js
   ● retry › retries until success
 
@@ -25,5 +25,5 @@ FAIL test/retry.test.js
 Test Suites: 1 failed, 3 passed, 4 total
 Tests:       1 failed, 26 passed, 27 total
 Snapshots:   0 total
-Time:        0.277 s
+Time:        0.289 s
 Ran all test suites.

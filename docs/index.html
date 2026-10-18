@@ -397,7 +397,7 @@
     </tbody>
   </table>
 
-  <p>Measured with Claude's tokenizer on small real projects. Larger test suites print more, so they save more. On a failure, hush shows the full output by default, which costs about 10% more than the raw output. See the <a href="https://github.com/alfranz/hush/blob/main/benchmark/results/results.md">benchmark results</a> for all numbers and outputs.</p>
+  <p>Measured with Claude's tokenizer on small real projects. Larger test suites print more, so they save more. On a failure, hush shows the full output by default. The only extra cost is the ✗ line, about 6–9 tokens. See the <a href="https://github.com/alfranz/hush/blob/main/benchmark/results/results.md">benchmark results</a> for all numbers and outputs.</p>
 </section>
 
 <!-- Usage -->
@@ -412,18 +412,18 @@ hush <span class="s">"pytest -x"</span>
 <span class="c"># On failure, shows full output (traceback, assertion details, etc.)</span>
 hush <span class="s">"pytest -x"</span>
 <span class="r">✗</span> pytest -x
-  <span class="c">=================================== FAILURES ===================================</span>
-  <span class="c">__________________________________ test_login __________________________________</span>
+<span class="c">=================================== FAILURES ===================================</span>
+<span class="c">__________________________________ test_login __________________________________</span>
 
-      def test_login():
-          response = client.get("/auth/login")
-  >       assert response.status_code == 200
-  E       AssertionError: assert 401 == 200
+    def test_login():
+        response = client.get("/auth/login")
+>       assert response.status_code == 200
+E       AssertionError: assert 401 == 200
 
-  tests/test_auth.py:10: AssertionError
-  <span class="c">=========================== short test summary info ============================</span>
-  FAILED tests/test_auth.py::test_login - AssertionError: assert 401 == 200
-  <span class="c">============================== 1 failed in 0.06s ===============================</span></code></pre>
+tests/test_auth.py:10: AssertionError
+<span class="c">=========================== short test summary info ============================</span>
+FAILED tests/test_auth.py::test_login - AssertionError: assert 401 == 200
+<span class="c">============================== 1 failed in 0.06s ===============================</span></code></pre>
 
   <h3>Two command forms</h3>
   <p>One quoted argument runs with <code>sh -c</code>, so pipes, <code>&amp;&amp;</code>, <code>;</code>, globs and <code>$VARS</code> work. Several arguments run the program directly, with the arguments as given. For simple commands, both forms give the same result.</p>

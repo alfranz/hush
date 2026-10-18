@@ -4,7 +4,7 @@
 FAIL
 FAIL	example.com/bench/cache	0.001s
 ok  	example.com/bench/config	0.001s
-ok  	example.com/bench/mathx	0.002s
-ok  	example.com/bench/ratelimit	0.002s
+ok  	example.com/bench/mathx	0.001s
+ok  	example.com/bench/ratelimit	0.001s
 ok  	example.com/bench/textutil	0.001s
 FAIL

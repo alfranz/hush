@@ -58,6 +58,7 @@ func executeBatch(jobs []job, continueOnError bool) error {
 	firstFailCode := 0
 
 	for _, j := range jobs {
+		j.indent = "  "
 		exitCode, err := runJob(j)
 		if err != nil {
 			return err

@@ -220,14 +220,14 @@ func TestFlags(t *testing.T) {
 			"tail",
 			"hush-python-pass",
 			[]string{"hush", "--tail", "2", "printf 'a\\nb\\nc\\nd\\ne\\n' && exit 1"},
-			1, "  d\n  e", "  a",
+			1, "\nd\ne\n", "\na\n",
 		},
 		// --head N: failure block shows only the first N lines
 		{
 			"head",
 			"hush-python-pass",
 			[]string{"hush", "--head", "2", "printf 'a\\nb\\nc\\nd\\ne\\n' && exit 1"},
-			1, "  a\n  b", "  e",
+			1, "\na\nb\n", "\ne\n",
 		},
 		// --warn-pattern: success with matching output is reported as qualified success
 		{
