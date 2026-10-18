@@ -38,11 +38,11 @@ export PATH="$HOME/go/bin:$PATH"
 ```bash
 # Basic usage
 hush "pytest -x"
-# ✓ pytest
+# ✓ pytest -x
 
 # On failure, shows full output (traceback, assertion details, etc.)
 hush "pytest -x"
-# ✗ pytest
+# ✗ pytest -x
 #   =================================== FAILURES ===================================
 #   __________________________________ test_login __________________________________
 #
@@ -58,7 +58,7 @@ hush "pytest -x"
 
 # Without quotes: hush runs the program directly with its arguments
 hush go test -race ./...
-# ✓ go
+# ✓ go test -race ./...
 
 # Custom label
 hush --label "unit tests" "pytest tests/unit"
@@ -70,14 +70,15 @@ hush --head 20 "cargo build"       # first 20 lines
 
 # Warning-aware success (exit code still 0)
 hush --warn-pattern "warning TS[0-9]+" --warn-tail 5 "tsc --noEmit"
-# ⚠ tsc (3 warnings)
+# ⚠ tsc --noEmit (3 warnings)
 #   src/auth.ts:42:3 - warning TS2304: Cannot find name 'userId'.
 
 # Batch mode
 hush batch "ruff check ." "ty check src/" "pytest -x"
-# ✓ ruff
-# ✓ ty
-# ✓ 2/2 checks passed
+# ✓ ruff check .
+# ✓ ty check src/
+# ✓ pytest -x
+# ✓ 3/3 checks passed
 
 # Continue on failure
 hush batch --continue "ruff check ." "false" "pytest -x"
@@ -138,7 +139,7 @@ Settings in `defaults` apply to all commands (root, batch, and named checks) unl
 
 | Flag | Description |
 |------|-------------|
-| `--label` | Custom label for the summary line |
+| `--label` | Custom label for the summary line. The default label is the command, cut to 40 characters. Not supported with `batch` |
 | `--tail N` | Show only last N lines on failure |
 | `--head N` | Show only first N lines on failure |
 | `--grep PATTERN` | Filter output to matching lines |

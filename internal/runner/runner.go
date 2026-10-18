@@ -67,16 +67,24 @@ func Run(ctx context.Context, opts Options) (*Result, error) {
 	}, nil
 }
 
+// maxLabelLen is the longest derived label, in characters.
+const maxLabelLen = 40
+
+// deriveLabel uses the whole command as the label, so that the label shows
+// which command failed. It drops the directory of the program, collapses
+// whitespace and cuts the result to maxLabelLen characters.
 func deriveLabel(command string) string {
 	fields := strings.Fields(command)
 	if len(fields) == 0 {
 		return "unknown"
 	}
-	// Use the first token as the label
-	token := fields[0]
 	// Strip path prefix
-	if idx := strings.LastIndex(token, "/"); idx >= 0 {
-		token = token[idx+1:]
+	if idx := strings.LastIndex(fields[0], "/"); idx >= 0 {
+		fields[0] = fields[0][idx+1:]
 	}
-	return token
+	label := []rune(strings.Join(fields, " "))
+	if len(label) > maxLabelLen {
+		return string(label[:maxLabelLen-3]) + "..."
+	}
+	return string(label)
 }

@@ -65,31 +65,31 @@ func TestCommandForms(t *testing.T) {
 		wantInOut string
 	}{
 		// Bug 1: arguments after the first word must not be dropped.
-		{"unquoted", []string{"ls", "/nonexistent"}, "✗ ls", lsExit, "/nonexistent"},
+		{"unquoted", []string{"ls", "/nonexistent"}, "✗ ls /nonexistent", lsExit, "/nonexistent"},
 		{"unquoted with label", []string{"--label", "x", "ls", "/nonexistent"}, "✗ x", lsExit, "/nonexistent"},
-		{"double dash", []string{"--", "ls", "/nonexistent"}, "✗ ls", lsExit, "/nonexistent"},
-		{"quoted", []string{"ls /nonexistent"}, "✗ ls", lsExit, "/nonexistent"},
-		{"batch quoted", []string{"batch", "ls /nonexistent"}, "✗ ls", lsExit, "/nonexistent"},
+		{"double dash", []string{"--", "ls", "/nonexistent"}, "✗ ls /nonexistent", lsExit, "/nonexistent"},
+		{"quoted", []string{"ls /nonexistent"}, "✗ ls /nonexistent", lsExit, "/nonexistent"},
+		{"batch quoted", []string{"batch", "ls /nonexistent"}, "✗ ls /nonexistent", lsExit, "/nonexistent"},
 
 		// Bug 2: flags after the command belong to the command.
-		{"command flag", []string{"ls", "-la", "/nonexistent"}, "✗ ls", lsExit, "/nonexistent"},
-		{"sh -c", []string{"sh", "-c", "exit 3"}, "✗ sh", 3, ""},
+		{"command flag", []string{"ls", "-la", "/nonexistent"}, "✗ ls -la /nonexistent", lsExit, "/nonexistent"},
+		{"sh -c", []string{"sh", "-c", "exit 3"}, "✗ sh -c exit 3", 3, ""},
 		{"hush flags then double dash", []string{"--label", "t", "--", "sh", "-c", "exit 3"}, "✗ t", 3, ""},
-		{"hush --help after command", []string{"sh", "-c", "exit 0", "--help"}, "✓ sh", 0, ""},
+		{"hush --help after command", []string{"sh", "-c", "exit 0", "--help"}, "✓ sh -c exit 0 --help", 0, ""},
 
 		// Quoted form still runs through the shell.
-		{"quoted pipe", []string{"echo hi | grep -q nope"}, "✗ echo", 1, ""},
+		{"quoted pipe", []string{"echo hi | grep -q nope"}, "✗ echo hi | grep -q nope", 1, ""},
 		{"quoted success", []string{"true"}, "✓ true", 0, ""},
-		{"unquoted success", []string{"sh", "-c", "true"}, "✓ sh", 0, ""},
+		{"unquoted success", []string{"sh", "-c", "true"}, "✓ sh -c true", 0, ""},
 
 		// Unquoted form does not go through a shell: metacharacters are plain arguments.
-		{"unquoted no shell", []string{"echo", "a;", "exit", "1"}, "✓ echo", 0, ""},
+		{"unquoted no shell", []string{"echo", "a;", "exit", "1"}, "✓ echo a; exit 1", 0, ""},
 
 		// Flags after a quoted command are no longer hush flags. Fail with a hint.
 		{"flag after quoted command", []string{"sh -c 'exit 0'", "--label", "x"}, `hush: "sh -c 'exit 0'" looks like a quoted command, but more arguments follow it: ["--label" "x"]`, 1, "hush [flags]"},
 
 		// A missing program fails like it does in a shell.
-		{"not found", []string{"hush-no-such-program", "arg"}, "✗ hush-no-such-program", 127, "not found"},
+		{"not found", []string{"hush-no-such-program", "arg"}, "✗ hush-no-such-program arg", 127, "not found"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -105,6 +105,27 @@ func TestCommandForms(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestBatch(t *testing.T) {
+	t.Run("labels name each command", func(t *testing.T) {
+		out, code := runHush(t, "batch", "--continue", "go version", "sh -c 'exit 2'")
+		if !strings.Contains(out, "✓ go version\n") || !strings.Contains(out, "✗ sh -c 'exit 2'\n") {
+			t.Errorf("labels do not name each command:\n%s", out)
+		}
+		if code != 2 {
+			t.Errorf("exit code = %d, want 2", code)
+		}
+	})
+	t.Run("label flag is rejected", func(t *testing.T) {
+		out, code := runHush(t, "batch", "--label", "mine", "true", "false")
+		if strings.Contains(out, "✓") || strings.Contains(out, "✗") {
+			t.Errorf("batch ran with --label:\n%s", out)
+		}
+		if !strings.Contains(out, "--label") || code != 1 {
+			t.Errorf("want an error about --label and exit 1, got exit %d:\n%s", code, out)
+		}
+	})
 }
 
 // TestNeverFalseSuccess guards bug 1 directly: a command that fails only when
