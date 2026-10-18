@@ -1,0 +1,29 @@
+
+> bench-node@1.0.0 test
+> jest
+
+PASS test/queue.test.js
+PASS test/money.test.js
+PASS test/slug.test.js
+FAIL test/retry.test.js
+  ● retry › retries until success
+
+    server error 500
+
+      10 |     const result = await retry(async () => {
+      11 |       calls++;
+    > 12 |       if (calls < 3) throw new Error("server error 500");
+         |                            ^
+      13 |       return "ok";
+      14 |     });
+      15 |     expect(result).toBe("ok");
+
+      at test/retry.test.js:12:28
+      at fn (src/retry.js:7:20)
+      at Object.<anonymous> (test/retry.test.js:10:20)
+
+Test Suites: 1 failed, 3 passed, 4 total
+Tests:       1 failed, 26 passed, 27 total
+Snapshots:   0 total
+Time:        0.277 s
+Ran all test suites.

@@ -1,0 +1,24 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.15, pytest-8.3.4, pluggy-1.7.0
+rootdir: /app
+collected 39 items
+
+tests/test_cart.py .............                                         [ 33%]
+tests/test_discounts.py .......F.....                                    [ 66%]
+tests/test_pricing.py .............                                      [100%]
+
+=================================== FAILURES ===================================
+___________________________ test_flat500[10000-500] ____________________________
+
+amount = 10000, expected = 500
+
+    @pytest.mark.parametrize("amount,expected", [(10000, 500), (300, 300)])
+    def test_flat500(amount, expected):
+>       assert discount_cents(amount, "FLAT500") == expected
+E       AssertionError: assert 1000 == 500
+E        +  where 1000 = discount_cents(10000, 'FLAT500')
+
+tests/test_discounts.py:18: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_discounts.py::test_flat500[10000-500] - AssertionError: ass...
+========================= 1 failed, 38 passed in 0.03s =========================

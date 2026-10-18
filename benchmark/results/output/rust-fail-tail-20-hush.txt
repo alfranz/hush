@@ -1,0 +1,21 @@
+✗ cargo test
+  test units::tests::tib ... ok
+  test units::tests::zero_bytes ... ok
+  
+  failures:
+  
+  ---- inventory::tests::total_counts_all_skus stdout ----
+  
+  thread 'inventory::tests::total_counts_all_skus' panicked at src/inventory.rs:69:9:
+  assertion `left == right` failed
+    left: 10
+   right: 8
+  note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+  
+  
+  failures:
+      inventory::tests::total_counts_all_skus
+  
+  test result: FAILED. 26 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+  
+  error: test failed, to rerun pass `--lib`

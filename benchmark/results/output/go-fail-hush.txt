@@ -1,0 +1,11 @@
+✗ go test ./...
+  --- FAIL: TestEvictsLeastRecentlyUsed (0.00s)
+      cache_test.go:21: b should be evicted
+      cache_test.go:24: a should still be cached
+  FAIL
+  FAIL	example.com/bench/cache	0.001s
+  ok  	example.com/bench/config	0.001s
+  ok  	example.com/bench/mathx	0.001s
+  ok  	example.com/bench/ratelimit	0.001s
+  ok  	example.com/bench/textutil	0.001s
+  FAIL
