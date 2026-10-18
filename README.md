@@ -146,6 +146,7 @@ Settings in `defaults` apply to all commands (root, batch, and named checks) unl
 | `--warn-pattern REGEX` | On success, match warning lines and emit `⚠` with details |
 | `--warn-tail N` | On warning-qualified success, show last N warning lines (default: 10) |
 | `--continue` | Continue running after a failure (batch/all) |
+| `--version`, `-v` | Print the hush version |
 
 > **Note on `--grep` and test failures:** By default (no flags), hush prints the full command output on failure — including tracebacks, assertion diffs, and source context. This gives agents the most information to debug with. Use `--grep` and `--tail` primarily for **linters and build tools** that produce high-volume output. For **test runners** (pytest, Jest, go test), the unfiltered output is usually what the agent needs to fix the issue. A `--grep "FAIL"` on pytest output, for example, strips away the traceback and assertion details, leaving only the one-line summary.
 

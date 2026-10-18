@@ -150,3 +150,24 @@ func TestNeverFalseSuccess(t *testing.T) {
 		})
 	}
 }
+
+func TestVersion(t *testing.T) {
+	out, code := runHush(t, "--version")
+	if code != 0 || !strings.HasPrefix(out, "hush version ") {
+		t.Errorf("hush --version: exit %d, output %q", code, out)
+	}
+
+	// Release builds set the version with ldflags, as goreleaser does.
+	bin := filepath.Join(t.TempDir(), "hush")
+	build := exec.Command("go", "build", "-ldflags", "-X main.version=1.2.3", "-o", bin, ".")
+	if out, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("build hush: %v\n%s", err, out)
+	}
+	got, err := exec.Command(bin, "--version").Output()
+	if err != nil {
+		t.Fatalf("hush --version: %v", err)
+	}
+	if string(got) != "hush version 1.2.3\n" {
+		t.Errorf("hush --version = %q, want %q", got, "hush version 1.2.3\n")
+	}
+}
