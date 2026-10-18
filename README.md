@@ -56,6 +56,10 @@ hush "pytest -x"
 #   FAILED tests/test_auth.py::test_login - AssertionError: assert 401 == 200
 #   ============================== 1 failed in 0.06s ===============================
 
+# Without quotes: hush runs the program directly with its arguments
+hush go test -race ./...
+# ✓ go
+
 # Custom label
 hush --label "unit tests" "pytest tests/unit"
 
@@ -77,6 +81,25 @@ hush batch "ruff check ." "ty check src/" "pytest -x"
 
 # Continue on failure
 hush batch --continue "ruff check ." "false" "pytest -x"
+```
+
+### Two command forms
+
+| Form | Example | How hush runs it |
+|------|---------|------------------|
+| One quoted argument | `hush "make check && make lint"` | With `sh -c`. Pipes, `&&`, `;`, globs and `$VARS` work. |
+| Program and arguments | `hush make check` | Directly, with the arguments as given. No extra shell. |
+
+For simple commands, both forms give the same result.
+
+### Flag placement
+
+Put hush flags **before** the command. Hush reads its own flags until the first argument that is not a flag. Everything after it belongs to the command. `time`, `nice` and `env` work the same way.
+
+```bash
+hush --tail 20 go test -race ./...    # --tail is for hush, -race is for go
+hush --label t -- go test ./...       # -- ends the hush flags
+hush "make check" --label check       # error: flags after the command
 ```
 
 ## Config File (optional)

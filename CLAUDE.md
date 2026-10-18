@@ -41,7 +41,8 @@ go test -v -tags integration -run TestFlags ./tests/integration/...
 ## Key Decisions
 
 - Combined stdout+stderr via `CombinedOutput()`
-- `sh -c` execution for shell feature support
+- One argument runs with `sh -c` (shell features). Several arguments run the program directly, without a shell
+- Root command reads hush flags only before the command (`SetInterspersed(false)`)
 - Always plain text output — no ANSI codes, no color, no duration (optimized for agents)
 - ANSI stripping always enabled (command output is cleaned)
 - `os.Exit()` in RunE for exit code passthrough
