@@ -403,11 +403,11 @@
   <h3>Basic</h3>
   <pre><code><span class="c"># Wrap any command</span>
 hush <span class="s">"pytest -x"</span>
-<span class="g">✓</span> pytest
+<span class="g">✓</span> pytest -x
 
 <span class="c"># On failure, shows full output (traceback, assertion details, etc.)</span>
 hush <span class="s">"pytest -x"</span>
-<span class="r">✗</span> pytest
+<span class="r">✗</span> pytest -x
   <span class="c">=================================== FAILURES ===================================</span>
   <span class="c">__________________________________ test_login __________________________________</span>
 
@@ -421,21 +421,32 @@ hush <span class="s">"pytest -x"</span>
   FAILED tests/test_auth.py::test_login - AssertionError: assert 401 == 200
   <span class="c">============================== 1 failed in 0.06s ===============================</span></code></pre>
 
-  <h3>Custom labels</h3>
-  <p>By default, hush derives the label from the command name. Use <code>--label</code> to override it — especially useful when running the same tool multiple times.</p>
-  <pre><code><span class="c"># Default: label is derived from command ("pytest")</span>
-hush <span class="s">"pytest tests/unit"</span>
-<span class="g">✓</span> pytest
+  <h3>Two command forms</h3>
+  <p>One quoted argument runs with <code>sh -c</code>, so pipes, <code>&amp;&amp;</code>, <code>;</code>, globs and <code>$VARS</code> work. Several arguments run the program directly, with the arguments as given. For simple commands, both forms give the same result.</p>
+  <pre><code><span class="c"># One quoted argument: runs with sh -c</span>
+hush <span class="s">"make check &amp;&amp; make lint"</span>
+
+<span class="c"># Program and arguments: runs directly</span>
+hush go test -race ./...
+<span class="g">✓</span> go test -race ./...</code></pre>
+
+  <h3>Flag placement</h3>
+  <p>Put hush flags <strong>before</strong> the command. hush reads its own flags until the first argument that is not a flag. Everything after it belongs to the command. <code>time</code>, <code>nice</code> and <code>env</code> work the same way.</p>
+  <pre><code>hush <span class="a">--tail</span> 20 go test -race ./...    <span class="c"># --tail is for hush, -race is for go</span>
+hush <span class="a">--label</span> t <span class="a">--</span> go test ./...       <span class="c"># -- ends the hush flags</span>
+hush <span class="s">"make check"</span> <span class="a">--label</span> check       <span class="c"># error: flags after the command</span></code></pre>
+
+  <h3>Labels</h3>
+  <p>By default, the label is the whole command, cut to 40 characters. So you can see which command failed. Use <code>--label</code> to set a shorter name.</p>
+  <pre><code>hush <span class="s">"pytest tests/unit"</span>
+<span class="g">✓</span> pytest tests/unit
 
 hush <span class="s">"pytest tests/integration"</span>
-<span class="r">✗</span> pytest         <span class="c"># which suite failed?</span>
+<span class="r">✗</span> pytest tests/integration
 
-<span class="c"># With --label: easy to tell apart</span>
+<span class="c"># With --label</span>
 hush <span class="a">--label</span> <span class="s">"unit"</span> <span class="s">"pytest tests/unit"</span>
-<span class="g">✓</span> unit
-
-hush <span class="a">--label</span> <span class="s">"integration"</span> <span class="s">"pytest tests/integration"</span>
-<span class="r">✗</span> integration    <span class="c"># clear</span></code></pre>
+<span class="g">✓</span> unit</code></pre>
 
   <h3>Filtering output</h3>
   <pre><code><span class="c"># Last 30 lines of output</span>
@@ -459,16 +470,18 @@ hush <span class="a">--head</span> 20 <span class="s">"cargo build"</span></code
   <h2><a class="hash" href="#batch">#</a> Batch Mode</h2>
   <p>Run multiple commands in sequence with a combined summary.</p>
   <pre><code>hush batch <span class="s">"ruff check ."</span> <span class="s">"ty check src/"</span> <span class="s">"pytest -x"</span>
-<span class="g">✓</span> ruff
-<span class="g">✓</span> ty
-<span class="g">✓</span> pytest
+<span class="g">✓</span> ruff check .
+<span class="g">✓</span> ty check src/
+<span class="g">✓</span> pytest -x
 <span class="g">✓</span> 3/3 checks passed</code></pre>
+
+  <p>Each command is labeled with its own text. <code>--label</code> does not work with <code>batch</code>. To give checks names, use the config file.</p>
 
   <p>Use <code>--continue</code> to run all commands even if one fails:</p>
   <pre><code>hush batch <span class="a">--continue</span> <span class="s">"ruff check ."</span> <span class="s">"false"</span> <span class="s">"pytest -x"</span>
-<span class="g">✓</span> ruff
+<span class="g">✓</span> ruff check .
 <span class="r">✗</span> false
-<span class="g">✓</span> pytest
+<span class="g">✓</span> pytest -x
 <span class="r">✗</span> 2/3 checks passed</code></pre>
 </section>
 
@@ -494,12 +507,12 @@ hush <span class="a">--head</span> 20 <span class="s">"cargo build"</span></code
 
   <p>Then run by name:</p>
   <pre><code>hush lint   <span class="c"># run a single check</span>
-<span class="g">✓</span> ruff
+<span class="g">✓</span> ruff check .
 
 hush all    <span class="c"># run all checks in order</span>
-<span class="g">✓</span> ruff
-<span class="g">✓</span> ty
-<span class="g">✓</span> pytest
+<span class="g">✓</span> ruff check .
+<span class="g">✓</span> ty check src/
+<span class="g">✓</span> pytest -x
 <span class="g">✓</span> 3/3 checks passed</code></pre>
 </section>
 
@@ -512,7 +525,7 @@ hush all    <span class="c"># run all checks in order</span>
   <pre><code>hush <span class="a">--grep</span> <span class="s">"error"</span> <span class="a">--tail</span> 10 <span class="s">"make build"</span></code></pre>
 
   <h3><span class="lang-tag general">General</span> Use labels when running the same tool multiple times</h3>
-  <p>When your agent runs the same test suite against different targets, labels make the output scannable.</p>
+  <p>The default label is the whole command. When your agent runs the same test suite against different targets, short labels make the output easier to scan.</p>
   <pre><code>hush <span class="a">--label</span> <span class="s">"unit"</span> <span class="s">"pytest tests/unit"</span>
 hush <span class="a">--label</span> <span class="s">"integration"</span> <span class="s">"pytest tests/integration"</span></code></pre>
 
@@ -603,9 +616,9 @@ hush all</code></pre>
   <span class="s">"ruff check ."</span> \
   <span class="s">"ty check src/"</span> \
   <span class="s">"pytest -x --tb=short"</span>
-<span class="g">✓</span> ruff
-<span class="g">✓</span> ty
-<span class="g">✓</span> pytest
+<span class="g">✓</span> ruff check .
+<span class="g">✓</span> ty check src/
+<span class="g">✓</span> pytest -x --tb=short
 <span class="g">✓</span> 3/3 checks passed</code></pre>
   </div>
 
@@ -666,16 +679,20 @@ surfaces only the relevant lines on failure.</code></pre>
 <!-- Flags -->
 <section id="flags">
   <h2><a class="hash" href="#flags">#</a> Flags Reference</h2>
+  <p>hush flags go before the command. See <a href="#usage">flag placement</a>.</p>
   <table>
     <thead>
       <tr><th>Flag</th><th>Description</th></tr>
     </thead>
     <tbody>
-      <tr><td><code>--label</code></td><td>Custom label for the summary line</td></tr>
+      <tr><td><code>--label</code></td><td>Custom label for the summary line. The default label is the command, cut to 40 characters. Not supported with <code>batch</code></td></tr>
       <tr><td><code>--tail N</code></td><td>Show only last N lines on failure</td></tr>
       <tr><td><code>--head N</code></td><td>Show only first N lines on failure</td></tr>
       <tr><td><code>--grep PATTERN</code></td><td>Filter output to lines matching pattern</td></tr>
+      <tr><td><code>--warn-pattern REGEX</code></td><td>On success, match warning lines and print <code>⚠</code> with details</td></tr>
+      <tr><td><code>--warn-tail N</code></td><td>On a success with warnings, show the last N warning lines (default: 10)</td></tr>
       <tr><td><code>--continue</code></td><td>Continue running after a failure (batch/all)</td></tr>
+      <tr><td><code>--version</code>, <code>-v</code></td><td>Print the hush version</td></tr>
     </tbody>
   </table>
 </section>
