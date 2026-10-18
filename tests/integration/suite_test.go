@@ -207,11 +207,12 @@ func TestFlags(t *testing.T) {
 			[]string{"hush", "pytest tests/ -q --color=yes"},
 			1, "✗", "\x1b[",
 		},
-		// --grep: failure block contains only lines matching the pattern
+		// --grep: failure block contains only lines matching the pattern.
+		// The fixed label keeps the command text out of the summary line.
 		{
 			"grep",
 			"hush-python-pass",
-			[]string{"hush", "--grep", "ERROR", "printf 'INFO: ok\\nERROR: bad\\nINFO: fine\\n' && exit 1"},
+			[]string{"hush", "--label", "grep", "--grep", "ERROR", "printf 'INFO: ok\\nERROR: bad\\nINFO: fine\\n' && exit 1"},
 			1, "ERROR: bad", "INFO:",
 		},
 		// --tail N: failure block shows only the last N lines
@@ -239,7 +240,7 @@ func TestFlags(t *testing.T) {
 		{
 			"warn-tail",
 			"hush-python-pass",
-			[]string{"hush", "--warn-pattern", "warning TS[0-9]+", "--warn-tail", "2", "printf 'warning TS1000\\nwarning TS2000\\nwarning TS3000\\n'"},
+			[]string{"hush", "--label", "warn", "--warn-pattern", "warning TS[0-9]+", "--warn-tail", "2", "printf 'warning TS1000\\nwarning TS2000\\nwarning TS3000\\n'"},
 			0, "... and 1 more", "warning TS1000",
 		},
 	}
