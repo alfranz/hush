@@ -3,3 +3,6 @@ dist/
 tests/integration/suites/hush
 .DS_Store
 /hush
+
+# Release notes draft (see CLAUDE.md, Release Process)
+/notes.md

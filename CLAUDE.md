@@ -38,6 +38,32 @@ make integration-test
 go test -v -tags integration -run TestFlags ./tests/integration/...
 ```
 
+## Release Process
+
+Creating a GitHub release creates the tag. The tag starts `.github/workflows/release.yml`. goreleaser (`.goreleaser.yaml`) then builds the binaries, uploads them to the release, and keeps the release notes. It sets `main.version` through its default ldflags.
+
+**Ask the user before you create the release.** It publishes the release and cannot be undone cleanly.
+
+1. **Pick the version.** Use semantic versioning with a `v` prefix (`v0.3.0`). Before 1.0: a breaking change or a new feature is a minor bump. A fix only is a patch bump. Confirm the version with the user.
+2. **Check main.**
+   - All PRs for the release are merged. `git pull` on main.
+   - CI on the latest main commit passes: `gh run list --branch main --limit 3`.
+   - `make integration-test` passes on main (needs Docker, takes about 2 minutes).
+   - If the docs site (`docs/index.html`, https://alfranz.github.io/hush/) changed, look at it in a browser.
+3. **Write `notes.md`** in the repo root. Git ignores it. Base it on the PRs merged since the last tag: `git log --oneline --merges vPREV..origin/main`, then `gh pr view <n>` for each one. List breaking changes first, with a before/after example. Then list the changes with their PR numbers. Check every example against a fresh build. GitHub adds the list of merged PRs below the notes.
+4. **Create the release** (after the user says yes):
+   ```bash
+   gh release create vX.Y.Z --target main --generate-notes --notes-file notes.md
+   ```
+5. **Verify.**
+   - Wait for the Release workflow: `gh run list --workflow release.yml --limit 1`.
+   - The release has 6 archives (`hush_X.Y.Z_{darwin,linux}_{amd64,arm64}.tar.gz`, `hush_X.Y.Z_windows_{amd64,arm64}.zip`) and `checksums.txt`: `gh release view vX.Y.Z --json assets --jq '.assets[].name'`.
+   - A downloaded binary prints the right version:
+     ```bash
+     gh release download vX.Y.Z -p '*darwin_arm64.tar.gz' -D "$TMPDIR/hush-rel" && tar -xzf "$TMPDIR"/hush-rel/*.tar.gz -C "$TMPDIR/hush-rel" && "$TMPDIR/hush-rel/hush" --version
+     # expect: hush version X.Y.Z
+     ```
+
 ## Key Decisions
 
 - Combined stdout+stderr via `CombinedOutput()`
