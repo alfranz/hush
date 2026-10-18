@@ -23,7 +23,7 @@ const logo = `
  |_| |_|\__,_|___/_| |_|
 `
 
-func NewRootCmd() *cobra.Command {
+func NewRootCmd(version string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "hush [flags] <command> [args...]",
 		Short: "Context-efficient command runner",
@@ -35,8 +35,9 @@ func NewRootCmd() *cobra.Command {
 
 Hush reads its own flags only before the command. The first argument that is
 not a flag starts the command. Everything after it belongs to the command.`,
-		Args: cobra.ArbitraryArgs,
-		RunE: runRoot,
+		Args:    cobra.ArbitraryArgs,
+		Version: version,
+		RunE:    runRoot,
 		// Don't show errors twice
 		SilenceErrors: true,
 		SilenceUsage:  true,
@@ -51,8 +52,8 @@ not a flag starts the command. Everything after it belongs to the command.`,
 	return cmd
 }
 
-func Execute() {
-	cmd := NewRootCmd()
+func Execute(version string) {
+	cmd := NewRootCmd(version)
 
 	// Load config and register named check subcommands
 	registerNamedChecks(cmd)
