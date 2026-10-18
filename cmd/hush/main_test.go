@@ -53,6 +53,10 @@ func firstLine(s string) string {
 }
 
 func TestCommandForms(t *testing.T) {
+	// "ls /nonexistent" exits 1 with BSD ls (macOS) and 2 with GNU ls (Linux).
+	// hush must pass through whatever code ls returns.
+	lsExit := exec.Command("ls", "/nonexistent").Run().(*exec.ExitError).ExitCode()
+
 	tests := []struct {
 		name      string
 		args      []string
@@ -61,14 +65,14 @@ func TestCommandForms(t *testing.T) {
 		wantInOut string
 	}{
 		// Bug 1: arguments after the first word must not be dropped.
-		{"unquoted", []string{"ls", "/nonexistent"}, "✗ ls", 1, "/nonexistent"},
-		{"unquoted with label", []string{"--label", "x", "ls", "/nonexistent"}, "✗ x", 1, "/nonexistent"},
-		{"double dash", []string{"--", "ls", "/nonexistent"}, "✗ ls", 1, "/nonexistent"},
-		{"quoted", []string{"ls /nonexistent"}, "✗ ls", 1, "/nonexistent"},
-		{"batch quoted", []string{"batch", "ls /nonexistent"}, "✗ ls", 1, "/nonexistent"},
+		{"unquoted", []string{"ls", "/nonexistent"}, "✗ ls", lsExit, "/nonexistent"},
+		{"unquoted with label", []string{"--label", "x", "ls", "/nonexistent"}, "✗ x", lsExit, "/nonexistent"},
+		{"double dash", []string{"--", "ls", "/nonexistent"}, "✗ ls", lsExit, "/nonexistent"},
+		{"quoted", []string{"ls /nonexistent"}, "✗ ls", lsExit, "/nonexistent"},
+		{"batch quoted", []string{"batch", "ls /nonexistent"}, "✗ ls", lsExit, "/nonexistent"},
 
 		// Bug 2: flags after the command belong to the command.
-		{"command flag", []string{"ls", "-la", "/nonexistent"}, "✗ ls", 1, "/nonexistent"},
+		{"command flag", []string{"ls", "-la", "/nonexistent"}, "✗ ls", lsExit, "/nonexistent"},
 		{"sh -c", []string{"sh", "-c", "exit 3"}, "✗ sh", 3, ""},
 		{"hush flags then double dash", []string{"--label", "t", "--", "sh", "-c", "exit 3"}, "✗ t", 3, ""},
 		{"hush --help after command", []string{"sh", "-c", "exit 0", "--help"}, "✓ sh", 0, ""},
