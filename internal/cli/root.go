@@ -1,14 +1,11 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/alfranz/hush/internal/config"
-	"github.com/alfranz/hush/internal/filter"
-	"github.com/alfranz/hush/internal/output"
 	"github.com/alfranz/hush/internal/runner"
 	"github.com/spf13/cobra"
 )
@@ -85,23 +82,12 @@ func runRoot(cmd *cobra.Command, args []string) error {
 	f := applyDefaults(cmd, flags, cfg)
 	opts.Label = f.label
 
-	result, err := runner.Run(context.Background(), opts)
+	exitCode, err := runJob(job{run: opts, flags: f})
 	if err != nil {
 		return err
 	}
-
-	filtered := filter.Apply(result.Output, filter.Options{
-		Head:      f.head,
-		Tail:      f.tail,
-		Grep:      f.grep,
-		StripANSI: true,
-	})
-	warnings := buildWarningReport(result.Output, f)
-
-	output.PrintResult(os.Stdout, result.Label, result.ExitCode, filtered, warnings.count, warnings.lines)
-
-	if result.ExitCode != 0 {
-		os.Exit(result.ExitCode)
+	if exitCode != 0 {
+		os.Exit(exitCode)
 	}
 	return nil
 }

@@ -33,8 +33,14 @@ func TestMain(m *testing.M) {
 // runHush runs hush in an empty directory, so no .hush.yaml is loaded.
 func runHush(t *testing.T, args ...string) (string, int) {
 	t.Helper()
+	return runHushIn(t, t.TempDir(), args...)
+}
+
+// runHushIn runs hush in dir.
+func runHushIn(t *testing.T, dir string, args ...string) (string, int) {
+	t.Helper()
 	cmd := exec.Command(hushBin, args...)
-	cmd.Dir = t.TempDir()
+	cmd.Dir = dir
 	out, err := cmd.CombinedOutput()
 	code := 0
 	if err != nil {
@@ -169,5 +175,79 @@ func TestVersion(t *testing.T) {
 	}
 	if string(got) != "hush version 1.2.3\n" {
 		t.Errorf("hush --version = %q, want %q", got, "hush version 1.2.3\n")
+	}
+}
+
+// TestAll checks that "hush all" uses the same settings as a single named
+// check (CLI flags > per-check config > defaults) and runs the checks in the
+// order of the config file.
+func TestAll(t *testing.T) {
+	dir := t.TempDir()
+	config := `defaults:
+  continue: true
+  tail: 2
+checks:
+  zeta:
+    cmd: printf 'z1\nz2\nz3\n'; exit 1
+    label: Z
+  alpha:
+    cmd: printf 'E1\nok\nE2\nE3\n'; exit 1
+    label: A
+    grep: E
+  mid:
+    cmd: printf 'm1\nm2\nm3\nm4\n'; exit 1
+    label: M
+    tail: 3
+  Warn:
+    cmd: echo WARN w
+    warn-pattern: WARN
+`
+	if err := os.WriteFile(filepath.Join(dir, ".hush.yaml"), []byte(config), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name string
+		args []string
+		want string
+	}{
+		{"config settings", []string{"all"}, `✗ Z
+  z2
+  z3
+✗ A
+  E2
+  E3
+✗ M
+  m2
+  m3
+  m4
+⚠ echo WARN w (1 warning)
+  WARN w
+✗ 1/4 checks passed
+`},
+		{"CLI flag wins", []string{"--tail", "1", "all"}, `✗ Z
+  z3
+✗ A
+  E3
+✗ M
+  m4
+⚠ echo WARN w (1 warning)
+  WARN w
+✗ 1/4 checks passed
+`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Run several times: a map-based order would differ between runs.
+			for range 5 {
+				out, code := runHushIn(t, dir, tt.args...)
+				if out != tt.want {
+					t.Fatalf("output:\n%s\nwant:\n%s", out, tt.want)
+				}
+				if code != 1 {
+					t.Fatalf("exit code = %d, want 1", code)
+				}
+			}
+		})
 	}
 }

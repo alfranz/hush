@@ -1,14 +1,9 @@
 package cli
 
 import (
-	"context"
-	"maps"
 	"os"
-	"slices"
 
 	"github.com/alfranz/hush/internal/config"
-	"github.com/alfranz/hush/internal/filter"
-	"github.com/alfranz/hush/internal/output"
 	"github.com/alfranz/hush/internal/runner"
 	"github.com/spf13/cobra"
 )
@@ -19,9 +14,6 @@ func registerNamedChecks(root *cobra.Command) {
 		return
 	}
 
-	// Collect check names in order for "all" command
-	checkNames := slices.Collect(maps.Keys(cfg.Checks))
-
 	// Register individual check commands
 	for name, check := range cfg.Checks {
 		check := check
@@ -31,7 +23,7 @@ func registerNamedChecks(root *cobra.Command) {
 			SilenceErrors: true,
 			SilenceUsage:  true,
 			RunE: func(cmd *cobra.Command, args []string) error {
-				return runNamedCheck(check, cfg)
+				return runNamedCheck(check, cfg.Defaults)
 			},
 		}
 		root.AddCommand(cmd)
@@ -44,102 +36,38 @@ func registerNamedChecks(root *cobra.Command) {
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var commands []string
-			for _, name := range checkNames {
-				commands = append(commands, cfg.Checks[name].Cmd)
+			var jobs []job
+			for _, name := range cfg.CheckOrder {
+				jobs = append(jobs, checkJob(cfg.Checks[name], cfg.Defaults))
 			}
 			// Use defaults.continue for "all" command
 			continueOnError := cfg.Defaults.Continue
 			if cmd.Flags().Changed("continue") {
 				continueOnError, _ = cmd.Flags().GetBool("continue")
 			}
-			batchShared := flags
-			if cfg != nil {
-				if batchShared.warnPattern == "" {
-					batchShared.warnPattern = cfg.Defaults.WarnPattern
-				}
-				if batchShared.warnTail == 0 {
-					batchShared.warnTail = cfg.Defaults.WarnTail
-				}
-			}
-			return executeBatch(commands, batchShared, continueOnError)
+			return executeBatch(jobs, continueOnError)
 		},
 	}
 	allCmd.Flags().BoolP("continue", "", false, "Continue running after a failure")
 	root.AddCommand(allCmd)
 }
 
-func runNamedCheck(check config.Check, cfg *config.Config) error {
-	result, err := runner.Run(context.Background(), runner.Options{
-		Command: check.Cmd,
-		Label:   check.Label,
-	})
+// checkJob returns the job for one named check, with the CLI flags applied.
+func checkJob(check config.Check, defaults config.Defaults) job {
+	f := checkFlags(check, defaults, flags)
+	return job{
+		run:   runner.Options{Command: check.Cmd, Label: f.label},
+		flags: f,
+	}
+}
+
+func runNamedCheck(check config.Check, defaults config.Defaults) error {
+	exitCode, err := runJob(checkJob(check, defaults))
 	if err != nil {
 		return err
 	}
-
-	// Precedence: CLI flags > per-check config > defaults > zero
-	filterOpts := filter.Options{
-		StripANSI: true,
-	}
-
-	// Start with defaults
-	if cfg != nil {
-		filterOpts.Head = cfg.Defaults.Head
-		filterOpts.Tail = cfg.Defaults.Tail
-		filterOpts.Grep = cfg.Defaults.Grep
-	}
-
-	// Per-check config overrides defaults
-	if check.Head > 0 {
-		filterOpts.Head = check.Head
-	}
-	if check.Tail > 0 {
-		filterOpts.Tail = check.Tail
-	}
-	if check.Grep != "" {
-		filterOpts.Grep = check.Grep
-	}
-
-	// CLI flags override everything
-	if flags.head > 0 {
-		filterOpts.Head = flags.head
-	}
-	if flags.tail > 0 {
-		filterOpts.Tail = flags.tail
-	}
-	if flags.grep != "" {
-		filterOpts.Grep = flags.grep
-	}
-
-	warnFlags := sharedFlags{}
-	if cfg != nil {
-		warnFlags.warnPattern = cfg.Defaults.WarnPattern
-		warnFlags.warnTail = cfg.Defaults.WarnTail
-	}
-	if check.WarnPattern != "" {
-		warnFlags.warnPattern = check.WarnPattern
-	}
-	if check.WarnTail > 0 {
-		warnFlags.warnTail = check.WarnTail
-	}
-	if flags.warnPattern != "" {
-		warnFlags.warnPattern = flags.warnPattern
-	}
-	if flags.warnTail > 0 {
-		warnFlags.warnTail = flags.warnTail
-	}
-	warnFlags.head = filterOpts.Head
-	warnFlags.tail = filterOpts.Tail
-	warnFlags.grep = filterOpts.Grep
-
-	filtered := filter.Apply(result.Output, filterOpts)
-	warnings := buildWarningReport(result.Output, warnFlags)
-
-	output.PrintResult(os.Stdout, result.Label, result.ExitCode, filtered, warnings.count, warnings.lines)
-
-	if result.ExitCode != 0 {
-		os.Exit(result.ExitCode)
+	if exitCode != 0 {
+		os.Exit(exitCode)
 	}
 	return nil
 }

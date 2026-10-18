@@ -1,11 +1,9 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 
-	"github.com/alfranz/hush/internal/filter"
 	"github.com/alfranz/hush/internal/output"
 	"github.com/alfranz/hush/internal/runner"
 	"github.com/spf13/cobra"
@@ -47,37 +45,29 @@ func runBatch(cmd *cobra.Command, args []string) error {
 		continueOnError = true
 	}
 
-	return executeBatch(args, f, continueOnError)
+	jobs := make([]job, len(args))
+	for i, command := range args {
+		jobs[i] = job{run: runner.Options{Command: command}, flags: f}
+	}
+	return executeBatch(jobs, continueOnError)
 }
 
-func executeBatch(commands []string, f sharedFlags, continueOnError bool) error {
+func executeBatch(jobs []job, continueOnError bool) error {
 	passed := 0
-	total := len(commands)
+	total := len(jobs)
 	firstFailCode := 0
 
-	for _, command := range commands {
-		result, err := runner.Run(context.Background(), runner.Options{
-			Command: command,
-		})
+	for _, j := range jobs {
+		exitCode, err := runJob(j)
 		if err != nil {
 			return err
 		}
 
-		filtered := filter.Apply(result.Output, filter.Options{
-			Head:      f.head,
-			Tail:      f.tail,
-			Grep:      f.grep,
-			StripANSI: true,
-		})
-		warnings := buildWarningReport(result.Output, f)
-
-		output.PrintResult(os.Stdout, result.Label, result.ExitCode, filtered, warnings.count, warnings.lines)
-
-		if result.ExitCode == 0 {
+		if exitCode == 0 {
 			passed++
 		} else {
 			if firstFailCode == 0 {
-				firstFailCode = result.ExitCode
+				firstFailCode = exitCode
 			}
 			if !continueOnError {
 				break
