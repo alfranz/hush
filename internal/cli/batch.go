@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/alfranz/hush/internal/filter"
@@ -28,11 +29,16 @@ func newBatchCmd() *cobra.Command {
 	}
 
 	addSharedFlags(cmd, &batchFlags.sharedFlags)
+	_ = cmd.PersistentFlags().MarkHidden("label")
 	cmd.Flags().BoolVar(&batchFlags.continueOnError, "continue", false, "Continue running after a failure")
 	return cmd
 }
 
 func runBatch(cmd *cobra.Command, args []string) error {
+	if cmd.Flags().Changed("label") {
+		return fmt.Errorf("--label does not work with batch: each command is labeled with its own text.\n" +
+			"To name checks, define them in .hush.yaml and run hush all")
+	}
 	cfg := loadConfigQuiet()
 	f := applyDefaults(cmd, batchFlags.sharedFlags, cfg)
 

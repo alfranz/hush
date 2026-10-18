@@ -233,7 +233,7 @@ func TestFlags(t *testing.T) {
 			"warn-pattern",
 			"hush-python-pass",
 			[]string{"hush", "--warn-pattern", "warning TS[0-9]+", "printf 'info\\nwarning TS1000\\n'"},
-			0, "⚠ printf (1 warning)", "✓",
+			0, "⚠ printf 'info\\nwarning TS1000\\n' (1 warning)", "✓",
 		},
 		// --warn-tail N: qualified success shows only the last N warning lines
 		{

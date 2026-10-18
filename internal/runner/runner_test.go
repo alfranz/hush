@@ -42,8 +42,8 @@ func TestRunLabel(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if r.Label != "echo" {
-		t.Errorf("expected label 'echo', got %q", r.Label)
+	if r.Label != "echo hello" {
+		t.Errorf("expected label 'echo hello', got %q", r.Label)
 	}
 }
 
@@ -62,9 +62,14 @@ func TestDeriveLabel(t *testing.T) {
 		command string
 		want    string
 	}{
-		{"echo hello", "echo"},
-		{"/usr/bin/pytest -x", "pytest"},
-		{"make build", "make"},
+		{"echo hello", "echo hello"},
+		{"/usr/bin/pytest -x", "pytest -x"},
+		{"make build", "make build"},
+		{"go test ./...", "go test ./..."},
+		{"echo $HOME | grep -q nope", "echo $HOME | grep -q nope"},
+		{"  go   vet\n  ./...  ", "go vet ./..."},
+		{"pytest tests/unit/test_auth.py::test_login_fails -x", "pytest tests/unit/test_auth.py::test_..."},
+		{"echo ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓", "echo ✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓✓..."},
 		{"", "unknown"},
 	}
 	for _, tt := range tests {
@@ -72,5 +77,15 @@ func TestDeriveLabel(t *testing.T) {
 		if got != tt.want {
 			t.Errorf("deriveLabel(%q) = %q, want %q", tt.command, got, tt.want)
 		}
+	}
+}
+
+func TestRunArgsLabel(t *testing.T) {
+	r, err := Run(t.Context(), Options{Args: []string{"sh", "-c", "exit 0"}})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if r.Label != "sh -c exit 0" {
+		t.Errorf("expected label 'sh -c exit 0', got %q", r.Label)
 	}
 }
