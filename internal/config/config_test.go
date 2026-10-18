@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 )
 
@@ -149,5 +150,32 @@ checks:
 	}
 	if cfg.Defaults.Continue {
 		t.Error("expected defaults.continue false (unset)")
+	}
+}
+
+func TestLoadCheckOrder(t *testing.T) {
+	tmp := t.TempDir()
+	orig, _ := os.Getwd()
+	defer os.Chdir(orig)
+
+	content := []byte(`checks:
+  zeta:
+    cmd: "true"
+  Alpha:
+    cmd: "true"
+  mid:
+    cmd: "true"
+`)
+	os.WriteFile(filepath.Join(tmp, ".hush.yaml"), content, 0644)
+	os.Chdir(tmp)
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// File order, with names lowercased like the keys in Checks.
+	want := []string{"zeta", "alpha", "mid"}
+	if !slices.Equal(cfg.CheckOrder, want) {
+		t.Errorf("CheckOrder = %v, want %v", cfg.CheckOrder, want)
 	}
 }
