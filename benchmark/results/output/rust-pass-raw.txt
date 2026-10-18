@@ -1,34 +1,34 @@
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s
      Running unittests src/lib.rs (target/debug/deps/bench-c35e10c2fb41f141)
 
 running 27 tests
 test inventory::tests::add_and_take ... ok
-test inventory::tests::empty_total ... ok
 test inventory::tests::total_counts_all_skus ... ok
-test inventory::tests::take_too_many ... ok
-test parse::tests::empty ... ok
+test inventory::tests::take_unknown ... ok
 test parse::tests::hours ... ok
 test parse::tests::minutes ... ok
-test parse::tests::no_number ... ok
-test parse::tests::negative ... ok
-test parse::tests::version_large ... ok
+test inventory::tests::take_too_many ... ok
 test parse::tests::bad_unit ... ok
-test inventory::tests::take_unknown ... ok
-test parse::tests::version_zero ... ok
-test parse::tests::seconds ... ok
+test inventory::tests::empty_total ... ok
 test parse::tests::version_short ... ok
-test parse::tests::version_long ... ok
-test units::tests::gib ... ok
-test parse::tests::zero ... ok
-test units::tests::one_kib ... ok
-test units::tests::huge ... ok
-test units::tests::one_mib ... ok
+test parse::tests::negative ... ok
+test parse::tests::seconds ... ok
+test parse::tests::version_large ... ok
 test parse::tests::version_simple ... ok
-test units::tests::kib ... ok
-test units::tests::tib ... ok
+test parse::tests::version_long ... ok
+test parse::tests::empty ... ok
 test parse::tests::version_text ... ok
-test units::tests::zero_bytes ... ok
+test parse::tests::zero ... ok
+test parse::tests::no_number ... ok
+test units::tests::kib ... ok
+test units::tests::one_mib ... ok
+test units::tests::one_kib ... ok
 test units::tests::small ... ok
+test parse::tests::version_zero ... ok
+test units::tests::gib ... ok
+test units::tests::huge ... ok
+test units::tests::tib ... ok
+test units::tests::zero_bytes ... ok
 
 test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 

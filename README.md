@@ -43,18 +43,18 @@ hush "pytest -x"
 # On failure, shows full output (traceback, assertion details, etc.)
 hush "pytest -x"
 # ✗ pytest -x
-#   =================================== FAILURES ===================================
-#   __________________________________ test_login __________________________________
+# =================================== FAILURES ===================================
+# __________________________________ test_login __________________________________
 #
-#       def test_login():
-#           response = client.get("/auth/login")
-#   >       assert response.status_code == 200
-#   E       AssertionError: assert 401 == 200
+#     def test_login():
+#         response = client.get("/auth/login")
+# >       assert response.status_code == 200
+# E       AssertionError: assert 401 == 200
 #
-#   tests/test_auth.py:10: AssertionError
-#   =========================== short test summary info ============================
-#   FAILED tests/test_auth.py::test_login - AssertionError: assert 401 == 200
-#   ============================== 1 failed in 0.06s ===============================
+# tests/test_auth.py:10: AssertionError
+# =========================== short test summary info ============================
+# FAILED tests/test_auth.py::test_login - AssertionError: assert 401 == 200
+# ============================== 1 failed in 0.06s ===============================
 
 # Without quotes: hush runs the program directly with its arguments
 hush go test -race ./...
@@ -71,9 +71,9 @@ hush --head 20 "cargo build"       # first 20 lines
 # Warning-aware success (exit code still 0)
 hush --warn-pattern "warning TS[0-9]+" --warn-tail 5 "tsc --noEmit"
 # ⚠ tsc --noEmit (3 warnings)
-#   src/auth.ts:42:3 - warning TS6133: 'userId' is declared but its value is never read.
-#   src/auth.ts:57:9 - warning TS6133: 'token' is declared but its value is never read.
-#   src/db.ts:12:1 - warning TS6192: All imports in import declaration are unused.
+# src/auth.ts:42:3 - warning TS6133: 'userId' is declared but its value is never read.
+# src/auth.ts:57:9 - warning TS6133: 'token' is declared but its value is never read.
+# src/db.ts:12:1 - warning TS6192: All imports in import declaration are unused.
 
 # Batch mode
 hush batch "ruff check ." "ty check src/" "pytest -x"
@@ -171,12 +171,12 @@ A passing run always costs hush about 6–8 tokens. Larger test suites print mor
 
 | Test runner | Without hush | `hush` | `hush --tail 20` |
 |---|---:|---:|---:|
-| pytest | 391 tokens | 428 tokens (+9%) | 360 tokens (−8%) |
-| Jest via `npm test` | 312 tokens | 341 tokens (+9%) | 254 tokens (−19%) |
-| go test | 174 tokens | 191 tokens (+10%) | 191 tokens (+10%) |
-| cargo test | 704 tokens | 765 tokens (+9%) | 273 tokens (−61%) |
+| pytest | 391 tokens | 398 tokens (+2%) | 335 tokens (−14%) |
+| Jest via `npm test` | 312 tokens | 318 tokens (+2%) | 247 tokens (−21%) |
+| go test | 174 tokens | 183 tokens (+5%) | 183 tokens (+5%) |
+| cargo test | 704 tokens | 712 tokens (+1%) | 248 tokens (−65%) |
 
-On a failure, hush shows the full output by default, so the agent gets the whole traceback. This costs about 10% **more** than the raw output: hush adds the `✗` line and indents each output line by 2 spaces. Filters such as `--tail` save tokens on failures, but they can cut context the agent needs (see the note on `--grep` above).
+On a failure, hush shows the full output by default, so the agent gets the whole traceback. The only extra cost is the `✗` line, about 6–9 tokens. Filters such as `--tail` save tokens on failures, but they can cut context the agent needs (see the note on `--grep` above).
 
 <details>
 <summary><strong>Before and after: pytest with 39 passing tests</strong></summary>

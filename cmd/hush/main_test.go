@@ -251,3 +251,18 @@ checks:
 		})
 	}
 }
+
+// TestOutputIndent checks that a single command prints its output without an
+// indent (each indented line costs about one token), and that batch indents
+// each command's output to keep it apart from the summary lines.
+func TestOutputIndent(t *testing.T) {
+	out, _ := runHush(t, "printf 'a\\nb\\n'; exit 1")
+	if want := "✗ printf 'a\\nb\\n'; exit 1\na\nb\n"; out != want {
+		t.Errorf("single command:\ngot  %q\nwant %q", out, want)
+	}
+
+	out, _ = runHush(t, "batch", "--continue", "printf 'a\\n'; exit 1", "true")
+	if want := "✗ printf 'a\\n'; exit 1\n  a\n✓ true\n✗ 1/2 checks passed\n"; out != want {
+		t.Errorf("batch:\ngot  %q\nwant %q", out, want)
+	}
+}

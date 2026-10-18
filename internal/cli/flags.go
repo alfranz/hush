@@ -63,6 +63,9 @@ func firstSet[T comparable](values ...T) T {
 type job struct {
 	run   runner.Options
 	flags sharedFlags
+	// indent goes before each output line: none for a single command,
+	// two spaces in batch.
+	indent string
 }
 
 // runJob runs one command, prints its summary line and returns its exit code.
@@ -80,6 +83,6 @@ func runJob(j job) (int, error) {
 	})
 	warnings := buildWarningReport(result.Output, j.flags)
 
-	output.PrintResult(os.Stdout, result.Label, result.ExitCode, filtered, warnings.count, warnings.lines)
+	output.PrintResult(os.Stdout, result.Label, result.ExitCode, filtered, warnings.count, warnings.lines, j.indent)
 	return result.ExitCode, nil
 }

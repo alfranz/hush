@@ -2,13 +2,13 @@
 > bench-node@1.0.0 test
 > jest
 
-PASS test/slug.test.js
 PASS test/queue.test.js
+PASS test/slug.test.js
 PASS test/retry.test.js
 PASS test/money.test.js
 
 Test Suites: 4 passed, 4 total
 Tests:       27 passed, 27 total
 Snapshots:   0 total
-Time:        0.349 s
+Time:        0.334 s
 Ran all test suites.

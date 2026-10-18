@@ -8,7 +8,7 @@ import (
 
 func TestPrintResultSuccess(t *testing.T) {
 	var buf bytes.Buffer
-	PrintResult(&buf, "echo", 0, nil, 0, nil)
+	PrintResult(&buf, "echo", 0, nil, 0, nil, "")
 	got := buf.String()
 	if got != "✓ echo\n" {
 		t.Errorf("expected '✓ echo\\n', got: %q", got)
@@ -17,19 +17,16 @@ func TestPrintResultSuccess(t *testing.T) {
 
 func TestPrintResultFailure(t *testing.T) {
 	var buf bytes.Buffer
-	PrintResult(&buf, "test", 1, []byte("FAIL: something broke\n"), 0, nil)
-	got := buf.String()
-	if !strings.Contains(got, "✗ test") {
-		t.Errorf("expected failure marker, got: %q", got)
-	}
-	if !strings.Contains(got, "FAIL: something broke") {
-		t.Errorf("expected output, got: %q", got)
+	PrintResult(&buf, "test", 1, []byte("FAIL: something broke\n"), 0, nil, "")
+	want := "✗ test\nFAIL: something broke\n"
+	if got := buf.String(); got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 }
 
 func TestPrintResultNoDuration(t *testing.T) {
 	var buf bytes.Buffer
-	PrintResult(&buf, "echo", 0, nil, 0, nil)
+	PrintResult(&buf, "echo", 0, nil, 0, nil, "")
 	got := buf.String()
 	if strings.Contains(got, "(") {
 		t.Errorf("expected no duration, got: %q", got)
@@ -38,7 +35,7 @@ func TestPrintResultNoDuration(t *testing.T) {
 
 func TestPrintResultNoANSI(t *testing.T) {
 	var buf bytes.Buffer
-	PrintResult(&buf, "echo", 0, nil, 0, nil)
+	PrintResult(&buf, "echo", 0, nil, 0, nil, "")
 	got := buf.String()
 	if strings.Contains(got, "\x1b[") {
 		t.Errorf("expected no ANSI codes, got: %q", got)
@@ -47,16 +44,38 @@ func TestPrintResultNoANSI(t *testing.T) {
 
 func TestPrintResultWarningSuccess(t *testing.T) {
 	var buf bytes.Buffer
-	PrintResult(&buf, "types", 0, nil, 3, []byte("w1\nw2"))
-	got := buf.String()
-	if !strings.Contains(got, "⚠ types (3 warnings)") {
-		t.Errorf("expected warning marker, got: %q", got)
+	PrintResult(&buf, "types", 0, nil, 3, []byte("w1\nw2"), "")
+	want := "⚠ types (3 warnings)\nw1\nw2\n... and 1 more\n"
+	if got := buf.String(); got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
-	if !strings.Contains(got, "  w1") || !strings.Contains(got, "  w2") {
-		t.Errorf("expected warning details, got: %q", got)
+}
+
+// Batch output indents each command's output, so that its lines cannot be
+// mistaken for hush summary lines.
+func TestPrintResultIndent(t *testing.T) {
+	tests := []struct {
+		name     string
+		exitCode int
+		output   []byte
+		warnings []byte
+		want     string
+	}{
+		{"failure", 1, []byte("a\nb\n"), nil, "✗ cmd\n  a\n  b\n"},
+		{"warnings", 0, nil, []byte("w1\nw2"), "⚠ cmd (3 warnings)\n  w1\n  w2\n  ... and 1 more\n"},
 	}
-	if !strings.Contains(got, "... and 1 more") {
-		t.Errorf("expected hidden warning count, got: %q", got)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			warnCount := 0
+			if tt.warnings != nil {
+				warnCount = 3
+			}
+			PrintResult(&buf, "cmd", tt.exitCode, tt.output, warnCount, tt.warnings, "  ")
+			if got := buf.String(); got != tt.want {
+				t.Errorf("got %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 
