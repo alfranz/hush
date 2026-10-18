@@ -16,35 +16,51 @@ type Result struct {
 	Duration time.Duration
 }
 
+// Options selects how to run a command.
+// If Args is set, Args[0] runs directly with Args[1:] as its arguments, and
+// Command is ignored. Otherwise Command runs with "sh -c".
 type Options struct {
 	Command string
+	Args    []string
 	Label   string
 }
 
 func Run(ctx context.Context, opts Options) (*Result, error) {
+	command := opts.Command
+	cmd := exec.CommandContext(ctx, "sh", "-c", command)
+	if len(opts.Args) > 0 {
+		command = strings.Join(opts.Args, " ")
+		cmd = exec.CommandContext(ctx, opts.Args[0], opts.Args[1:]...)
+	}
+
 	label := opts.Label
 	if label == "" {
-		label = deriveLabel(opts.Command)
+		label = deriveLabel(command)
 	}
 
 	start := time.Now()
-	cmd := exec.CommandContext(ctx, "sh", "-c", opts.Command)
 	output, err := cmd.CombinedOutput()
 	duration := time.Since(start)
 
 	exitCode := 0
 	if err != nil {
 		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
+		switch {
+		case errors.As(err, &exitErr):
 			exitCode = exitErr.ExitCode()
-		} else {
+		case len(opts.Args) > 0:
+			// The program could not start (not found, not executable).
+			// Report it like a shell does: exit 127 and the error as output.
+			exitCode = 127
+			output = []byte(err.Error() + "\n")
+		default:
 			return nil, err
 		}
 	}
 
 	return &Result{
 		Label:    label,
-		Command:  opts.Command,
+		Command:  command,
 		ExitCode: exitCode,
 		Output:   output,
 		Duration: duration,

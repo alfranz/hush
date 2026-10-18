@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/alfranz/hush/internal/config"
 	"github.com/alfranz/hush/internal/filter"
@@ -24,17 +25,27 @@ const logo = `
 
 func NewRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "hush [flags] <command>",
+		Use:   "hush [flags] <command> [args...]",
 		Short: "Context-efficient command runner",
 		Long:  logo + "Run commands. Save tokens.\n✓ on success. Filtered output on failure. Built for agents.",
-		Args:  cobra.ArbitraryArgs,
-		RunE:  runRoot,
+		Example: `  hush go test ./...              run the program directly with its arguments
+  hush "go vet ./... && go test"  one quoted argument runs with sh -c (pipes, &&, ;)
+  hush --tail 20 make check       hush flags go before the command
+  hush --label t -- go test -race ./...
+
+Hush reads its own flags only before the command. The first argument that is
+not a flag starts the command. Everything after it belongs to the command.`,
+		Args: cobra.ArbitraryArgs,
+		RunE: runRoot,
 		// Don't show errors twice
 		SilenceErrors: true,
 		SilenceUsage:  true,
 	}
 
 	addSharedFlags(cmd, &flags)
+	// Stop flag parsing at the first argument that is not a flag, so that
+	// "hush go test -race" passes -race to go and not to hush.
+	cmd.Flags().SetInterspersed(false)
 	cmd.AddCommand(newBatchCmd())
 
 	return cmd
@@ -56,16 +67,24 @@ func runRoot(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return cmd.Help()
 	}
-	command := args[0]
+
+	// One argument is a shell command string: hush "make check && make lint".
+	// More arguments are a program and its arguments: hush make check.
+	opts := runner.Options{Command: args[0]}
+	if len(args) > 1 {
+		if strings.ContainsAny(args[0], " \t") {
+			return fmt.Errorf("hush: %q looks like a quoted command, but more arguments follow it: %q\n"+
+				"Put hush flags before the command: hush [flags] \"<command>\"", args[0], args[1:])
+		}
+		opts = runner.Options{Args: args}
+	}
 
 	// Apply defaults from config if CLI flags not set
 	cfg := loadConfigQuiet()
 	f := applyDefaults(cmd, flags, cfg)
+	opts.Label = f.label
 
-	result, err := runner.Run(context.Background(), runner.Options{
-		Command: command,
-		Label:   f.label,
-	})
+	result, err := runner.Run(context.Background(), opts)
 	if err != nil {
 		return err
 	}
