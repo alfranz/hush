@@ -11,20 +11,22 @@ make build          # Build to bin/hush
 make test           # Run tests with race detector (via hush)
 make install        # go install
 make integration-test  # Docker-based end-to-end tests (see below)
+go run ./benchmark     # Token benchmark on real test runners (see below)
 ```
 
 ## Project Structure
 
 - `cmd/hush/main.go` — Entry point
-- `internal/runner/` — Command execution engine (sh -c, exit code extraction)
+- `internal/runner/` — Command execution engine (sh -c or direct exec, exit code extraction)
 - `internal/filter/` — Output pipeline: ANSI stripping, grep, head/tail
 - `internal/output/` — Formatted ✓/✗ printer (always plain text, no ANSI)
 - `internal/config/` — .hush.yaml parsing via viper (checks + defaults)
 - `internal/cli/` — Cobra commands: root (single cmd), batch, named checks
+- `benchmark/` — Token benchmark: test projects in `projects/`, results in `results/`
 
 ## Integration Tests
 
-`tests/integration/` contains a Docker-based end-to-end suite that builds real language containers (Python/pytest, Node/node:test, Java/Maven) and runs hush against them. It covers every command and flag: root, batch, named checks, --label, --grep, --tail, --head, --continue.
+`tests/integration/` contains a Docker-based end-to-end suite that builds real language containers (Python/pytest, Node/node:test, Java/Maven) and runs hush against them. It covers every command and flag: root, batch, named checks, --label, --grep, --tail, --head, --continue, --warn-pattern, --warn-tail. It uses Docker, or Podman with `HUSH_CONTAINER_CLI=podman`.
 
 **Do not run this on every change.** It is slow (builds Docker images, downloads Maven deps) and is not part of `make test`. Run it when:
 - Changing CLI flags or adding new ones
@@ -37,6 +39,16 @@ make integration-test
 # or target a single suite for debugging:
 go test -v -tags integration -run TestFlags ./tests/integration/...
 ```
+
+## Benchmark
+
+`benchmark/` measures the tokens hush saves. It runs small real projects (pytest, Jest, go test, cargo test) in Docker, without and with hush. It counts tokens with a Claude model through OpenRouter. It writes `benchmark/results/results.md` and every output to `benchmark/results/output/`.
+
+```bash
+OPENROUTER_API_KEY=... go run ./benchmark
+```
+
+It costs a few cents per run and takes a few minutes the first time (image builds). Run it again when the output format changes (labels, summary lines), and update the token tables in `README.md` and `docs/index.html` from `results.md`.
 
 ## Release Process
 
@@ -73,4 +85,4 @@ Creating a GitHub release creates the tag. The tag starts `.github/workflows/rel
 - ANSI stripping always enabled (command output is cleaned)
 - `os.Exit()` in RunE for exit code passthrough
 - Module path: `github.com/alfranz/hush`
-- Config supports `defaults` section for tail/head/grep/continue (precedence: CLI flags > per-check config > defaults)
+- Config supports `defaults` section for tail/head/grep/warn-pattern/warn-tail/continue (precedence: CLI flags > per-check config > defaults). `hush all` runs the checks in file order with the same settings as `hush <check>`

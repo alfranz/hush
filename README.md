@@ -71,7 +71,9 @@ hush --head 20 "cargo build"       # first 20 lines
 # Warning-aware success (exit code still 0)
 hush --warn-pattern "warning TS[0-9]+" --warn-tail 5 "tsc --noEmit"
 # ⚠ tsc --noEmit (3 warnings)
-#   src/auth.ts:42:3 - warning TS2304: Cannot find name 'userId'.
+#   src/auth.ts:42:3 - warning TS6133: 'userId' is declared but its value is never read.
+#   src/auth.ts:57:9 - warning TS6133: 'token' is declared but its value is never read.
+#   src/db.ts:12:1 - warning TS6192: All imports in import declaration are unused.
 
 # Batch mode
 hush batch "ruff check ." "ty check src/" "pytest -x"
@@ -118,8 +120,8 @@ checks:
     cmd: ruff check .
   types:
     cmd: ty check src/
-    grep: "error:"
-    warn-pattern: "warning TS[0-9]+"
+    grep: "^error"
+    warn-pattern: "^warning"
     warn-tail: 5
   test:
     cmd: pytest -x
@@ -152,48 +154,56 @@ Settings in `defaults` apply to all commands (root, batch, and named checks) unl
 
 ## Token Savings
 
-The whole point of hush is saving context tokens when coding agents run shell commands. Here's how it stacks up across popular test runners:
+The whole point of hush is saving context tokens when coding agents run shell commands. The numbers below come from `go run ./benchmark`. It runs small real projects with each test runner in Docker, without and with hush, and counts tokens with Claude's tokenizer. See [benchmark/results](benchmark/results/results.md) for the method and every output.
 
-**Passing tests** (hush output: single summary line)
+**Passing tests** (hush output: one summary line)
 
-| Test Runner | Raw Output | With hush | Saved |
-|---|---|---|---|
-| pytest (47 tests) | ~1,028 tokens | ~4 tokens | **99%** |
-| Jest (89 tests + coverage) | ~886 tokens | ~5 tokens | **99%** |
-| go test (14 packages) | ~196 tokens | ~6 tokens | **96%** |
-| cargo test (51 tests) | ~683 tokens | ~5 tokens | **99%** |
+| Test runner | Without hush | With hush | Saved |
+|---|---:|---:|---:|
+| pytest (39 tests) | 144 tokens | 6 tokens | **96%** |
+| Jest via `npm test` (27 tests) | 127 tokens | 6 tokens | **95%** |
+| go test (5 packages) | 98 tokens | 8 tokens | **92%** |
+| cargo test (27 tests) | 604 tokens | 7 tokens | **99%** |
 
-**Failing tests** (hush output: summary + filtered error context)
+A passing run always costs hush about 6–8 tokens. Larger test suites print more, so they save more.
 
-| Test Runner | Raw Output | With hush | Saved |
-|---|---|---|---|
-| pytest (1 failure) | ~1,262 tokens | ~35 tokens | **97%** |
-| Jest (1 failure) | ~1,000 tokens | ~63 tokens | **93%** |
-| go test (1 pkg failure) | ~295 tokens | ~75 tokens | **74%** |
+**Failing tests** (1 failing test)
+
+| Test runner | Without hush | `hush` | `hush --tail 20` |
+|---|---:|---:|---:|
+| pytest | 391 tokens | 428 tokens (+9%) | 360 tokens (−8%) |
+| Jest via `npm test` | 312 tokens | 341 tokens (+9%) | 254 tokens (−19%) |
+| go test | 174 tokens | 191 tokens (+10%) | 191 tokens (+10%) |
+| cargo test | 704 tokens | 765 tokens (+9%) | 273 tokens (−61%) |
+
+On a failure, hush shows the full output by default, so the agent gets the whole traceback. This costs about 10% **more** than the raw output: hush adds the `✗` line and indents each output line by 2 spaces. Filters such as `--tail` save tokens on failures, but they can cut context the agent needs (see the note on `--grep` above).
 
 <details>
-<summary><strong>Before and after — pytest with 47 passing tests</strong></summary>
+<summary><strong>Before and after: pytest with 39 passing tests</strong></summary>
 
 ```
-# Without hush (50 lines, ~1,028 tokens)
+# Without hush (144 tokens)
 ============================= test session starts ==============================
-platform linux -- Python 3.12.1, pytest-8.0.2, pluggy-1.4.0
-...
-tests/test_auth.py::test_login_success PASSED                            [  2%]
-tests/test_auth.py::test_login_invalid_password PASSED                   [  4%]
-  ... (47 more lines)
-=============================== 47 passed in 3.42s ================================
+platform linux -- Python 3.12.15, pytest-8.3.4, pluggy-1.7.0
+rootdir: /app
+collected 39 items
 
-# With hush (1 line, ~4 tokens)
+tests/test_cart.py .............                                         [ 33%]
+tests/test_discounts.py .............                                    [ 66%]
+tests/test_pricing.py .............                                      [100%]
+
+============================== 39 passed in 0.03s ==============================
+
+# With hush (6 tokens)
 ✓ pytest
 ```
 
 </details>
 
-Run the full benchmark yourself:
+Run the benchmark yourself (needs Docker and an [OpenRouter](https://openrouter.ai) API key, costs a few cents):
 
 ```bash
-bash benchmark/run.sh
+OPENROUTER_API_KEY=... go run ./benchmark
 ```
 
 ## License

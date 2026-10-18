@@ -1,0 +1,10 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.15, pytest-8.3.4, pluggy-1.7.0
+rootdir: /app
+collected 39 items
+
+tests/test_cart.py .............                                         [ 33%]
+tests/test_discounts.py .............                                    [ 66%]
+tests/test_pricing.py .............                                      [100%]
+
+============================== 39 passed in 0.03s ==============================

@@ -88,6 +88,7 @@
     margin-right: 0.25rem;
   }
   h2 .hash:hover { color: var(--accent); }
+  section p a { color: var(--accent); }
 
   h3 {
     font-family: var(--mono);
@@ -364,36 +365,39 @@
 <!-- Why hush? -->
 <section id="why">
   <h2><a class="hash" href="#why">#</a> Why hush?</h2>
-  <p>Coding agents burn <strong>thousands of context tokens</strong> on verbose test output — even when all tests pass. hush reduces that to a single line.</p>
+  <p>Coding agents spend context tokens on verbose test output, even when all tests pass. hush reduces a passing run to a single line.</p>
 
   <div class="compare">
     <div>
-      <div class="label">Without hush (~1,028 tokens)</div>
+      <div class="label">Without hush (144 tokens)</div>
       <pre><code><span class="c">===== test session starts =====</span>
-<span class="c">platform linux -- Python 3.12</span>
-<span class="c">...</span>
-<span class="c">tests/test_auth.py::test_login PASSED  [ 2%]</span>
-<span class="c">tests/test_auth.py::test_logout PASSED [ 4%]</span>
-<span class="c">  ... (47 more lines)</span>
-<span class="c">====== 47 passed in 3.42s ======</span></code></pre>
+<span class="c">platform linux -- Python 3.12.15</span>
+<span class="c">rootdir: /app</span>
+<span class="c">collected 39 items</span>
+<span class="c">tests/test_cart.py .............      [ 33%]</span>
+<span class="c">tests/test_discounts.py ..........    [ 66%]</span>
+<span class="c">tests/test_pricing.py .............   [100%]</span>
+<span class="c">====== 39 passed in 0.03s ======</span></code></pre>
     </div>
     <div>
-      <div class="label">With hush (~4 tokens)</div>
+      <div class="label">With hush (6 tokens)</div>
       <pre><code><span class="g">✓</span> pytest</code></pre>
     </div>
   </div>
 
   <table class="savings">
     <thead>
-      <tr><th>Test Runner</th><th>Raw Output</th><th>With hush</th><th>Saved</th></tr>
+      <tr><th>Passing tests</th><th>Without hush</th><th>With hush</th><th>Saved</th></tr>
     </thead>
     <tbody>
-      <tr><td>pytest (47 tests)</td><td>~1,028 tokens</td><td>~4 tokens</td><td>99%</td></tr>
-      <tr><td>Jest (89 tests)</td><td>~886 tokens</td><td>~5 tokens</td><td>99%</td></tr>
-      <tr><td>go test (14 pkgs)</td><td>~196 tokens</td><td>~6 tokens</td><td>96%</td></tr>
-      <tr><td>cargo test (51 tests)</td><td>~683 tokens</td><td>~5 tokens</td><td>99%</td></tr>
+      <tr><td>pytest (39 tests)</td><td>144 tokens</td><td>6 tokens</td><td>96%</td></tr>
+      <tr><td>Jest via npm test (27 tests)</td><td>127 tokens</td><td>6 tokens</td><td>95%</td></tr>
+      <tr><td>go test (5 packages)</td><td>98 tokens</td><td>8 tokens</td><td>92%</td></tr>
+      <tr><td>cargo test (27 tests)</td><td>604 tokens</td><td>7 tokens</td><td>99%</td></tr>
     </tbody>
   </table>
+
+  <p>Measured with Claude's tokenizer on small real projects. Larger test suites print more, so they save more. On a failure, hush shows the full output by default, which costs about 10% more than the raw output. See the <a href="https://github.com/alfranz/hush/blob/main/benchmark/results/results.md">benchmark results</a> for all numbers and outputs.</p>
 </section>
 
 <!-- Usage -->
@@ -498,7 +502,7 @@ hush <span class="a">--head</span> 20 <span class="s">"cargo build"</span></code
     <span class="y">cmd</span>: ruff check .
   <span class="y">types</span>:
     <span class="y">cmd</span>: ty check src/
-    <span class="y">grep</span>: <span class="s">"error:"</span>
+    <span class="y">grep</span>: <span class="s">"^error"</span>
   <span class="y">test</span>:
     <span class="y">cmd</span>: pytest -x
     <span class="y">tail</span>: 40</code></pre>
@@ -540,8 +544,8 @@ hush <span class="a">--label</span> <span class="s">"integration"</span> <span c
 
   <h3><span class="lang-tag python">Python</span> Grep for ruff / ty errors</h3>
   <p>Linters can produce huge output. Filter to just the actionable lines.</p>
-  <pre><code><span class="c"># Only show lines with "error" for ty</span>
-hush <span class="a">--grep</span> <span class="s">"error:"</span> <span class="s">"ty check src/"</span>
+  <pre><code><span class="c"># Only show error lines for ty (they start with error[rule])</span>
+hush <span class="a">--grep</span> <span class="s">"^error"</span> <span class="s">"ty check src/"</span>
 
 <span class="c"># Ruff is usually concise, but cap it anyway</span>
 hush <span class="a">--tail</span> 20 <span class="s">"ruff check ."</span></code></pre>
@@ -574,7 +578,7 @@ hush <span class="a">--grep</span> <span class="s">"error"</span> <span class="s
   <h3><span class="lang-tag rust">Rust</span> Tame cargo output</h3>
   <p>Cargo is extremely verbose during compilation. Use <code>--head</code> or <code>--grep</code> to surface just the errors.</p>
   <pre><code><span class="c"># First 20 lines catches the first compiler error</span>
-hush <span class="a">--head</span> 20 <span class="s">"cargo build 2&gt;&amp;1"</span>
+hush <span class="a">--head</span> 20 <span class="s">"cargo build"</span>
 
 <span class="c"># Just errors from cargo test</span>
 hush <span class="a">--grep</span> <span class="s">"FAILED|error\\["</span> <span class="s">"cargo test"</span></code></pre>
@@ -600,7 +604,7 @@ hush <span class="a">--grep</span> <span class="s">"FAILED|error\\["</span> <spa
     <span class="y">cmd</span>: ruff check .
   <span class="y">types</span>:
     <span class="y">cmd</span>: ty check src/
-    <span class="y">grep</span>: <span class="s">"error:"</span>
+    <span class="y">grep</span>: <span class="s">"^error"</span>
   <span class="y">test</span>:
     <span class="y">cmd</span>: pytest -x --tb=short
     <span class="y">tail</span>: 40
@@ -625,7 +629,7 @@ hush all</code></pre>
   <div class="workflow-card">
     <h4>3. Build verification</h4>
     <p>Catch build errors early. Use <code>--head</code> to show the first error without the full cascade.</p>
-    <pre><code>hush <span class="a">--head</span> 15 <span class="s">"cargo build 2&gt;&amp;1"</span>
+    <pre><code>hush <span class="a">--head</span> 15 <span class="s">"cargo build"</span>
 hush <span class="a">--head</span> 15 <span class="s">"go build ./..."</span>
 hush <span class="a">--head</span> 15 <span class="s">"npm run build"</span></code></pre>
   </div>
